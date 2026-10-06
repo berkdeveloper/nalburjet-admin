@@ -2,25 +2,663 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+
+  --primary: #ee7402;
+  --primary-hover: #d96600;
+
+  --text-primary: #111111;
+  --text-secondary: #666666;
+
+  --border: #e5e5e5;
+  --background-soft: #f7f7f7;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+
+  --color-border: var(--border);
+  --color-background-soft: var(--background-soft);
+
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+button:not(:disabled),
+a,
+label[for],
+select:not(:disabled) {
+  cursor: pointer;
+}
+
+/* Description Rich Text */
+
+
+.rich-text-editor .tiptap {
+  min-height: 12rem;
+  padding: 0.75rem;
+  outline: none;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.rich-text-editor .tiptap > :first-child {
+  margin-top: 0;
+}
+
+.rich-text-editor .tiptap > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor .tiptap p {
+  margin: 0.5rem 0;
+}
+
+.rich-text-editor .tiptap h1 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rich-text-editor .tiptap h2 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.rich-text-editor .tiptap h3 {
+  margin: 0.875rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.rich-text-editor .tiptap ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.rich-text-editor .tiptap ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  list-style-type: decimal;
+}
+
+.rich-text-editor .tiptap li {
+  margin: 0.2rem 0;
+}
+
+.rich-text-editor .tiptap blockquote {
+  margin: 0.75rem 0;
+  border-left: 3px solid var(--primary);
+  padding-left: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.rich-text-editor .tiptap a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.rich-text-editor .tiptap p.is-editor-empty:first-child::before {
+  color: var(--text-secondary);
+  content: "Ürün açıklamasını buraya yazın...";
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+
+/* Order Print Document CSS */
+
+.order-print-document {
+  display: none;
+}
+
+@media print {
+  body {
+      background: #ffffff !important;
+  }
+
+  body > * {
+      visibility: hidden;
+  }
+
+  .orders-page {
+      display: none !important;
+  }
+
+  .order-print-document {
+      display: block !important;
+      visibility: visible !important;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      background: #ffffff;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 0;
+      font-size: 9pt;
+  }
+
+  .order-print-document * {
+      visibility: visible !important;
+  }
+
+  .print-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 7px;
+  }
+
+  .print-logo {
+      color: #ee7402;
+      font-size: 21pt;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+  }
+
+  .print-subtitle {
+      margin-top: 2px;
+      color: #666666;
+      font-size: 8pt;
+  }
+
+  .print-document-title {
+      text-align: right;
+  }
+
+  .print-document-title h1 {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: 700;
+  }
+
+  .print-document-title p {
+      margin-top: 2px;
+      color: #666666;
+      font-size: 8pt;
+  }
+
+  .print-divider {
+      height: 2px;
+      margin-bottom: 7px;
+      background: #ee7402;
+  }
+
+  .print-section {
+      margin-bottom: 7px;
+      break-inside: avoid;
+  }
+
+  .print-section h2 {
+      margin: 0 0 6px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #dddddd;
+      font-size: 10pt;
+      font-weight: 700;
+  }
+
+  .print-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 20px;
+  }
+
+  .print-info-grid > div {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+  }
+
+  .print-info-grid span {
+      color: #666666;
+      font-size: 7.5pt;
+  }
+
+  .print-info-grid strong {
+      font-size: 8.5pt;
+      font-weight: 600;
+  }
+
+  .print-address-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 10px;
+  }
+
+  .print-address-grid .print-section {
+      margin-bottom: 0;
+  }
+
+  .print-info-box {
+      padding: 7px 10px;
+      border: 1px solid #dddddd;
+      border-radius: 5px;
+  }
+
+  .print-info-box p {
+      margin: 1px 0;
+      font-size: 8.5pt;
+      line-height: 1.3;
+  }
+
+  .print-info-box .print-strong {
+      margin-bottom: 4px;
+      font-weight: 700;
+  }
+
+  .print-contact {
+      margin-top: 4px !important;
+      padding-top: 4px;
+      border-top: 1px solid #eeeeee;
+  }
+
+  .print-contact span {
+      color: #666666;
+  }
+
+  .print-products-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+  }
+
+  .print-products-table th {
+      padding: 5px 6px;
+      border-top: 1px solid #cccccc;
+      border-bottom: 1px solid #cccccc;
+      background: #f7f7f7;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-align: left;
+  }
+
+  .print-products-table td {
+      padding: 6px;
+      border-bottom: 1px solid #e5e5e5;
+      vertical-align: top;
+      font-size: 8pt;
+      line-height: 1.3;
+  }
+
+  .print-products-table th:nth-child(1) {
+      width: 34%;
+  }
+
+  .print-products-table th:nth-child(2) {
+      width: 18%;
+  }
+
+  .print-products-table th:nth-child(3) {
+      width: 8%;
+  }
+
+  .print-products-table th:nth-child(4) {
+      width: 14%;
+  }
+
+  .print-products-table th:nth-child(5) {
+      width: 11%;
+  }
+
+  .print-products-table th:nth-child(6) {
+      width: 15%;
+  }
+
+  .print-align-center {
+      text-align: center !important;
+  }
+
+  .print-align-right {
+      text-align: right !important;
+  }
+
+  .print-total-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+      break-inside: avoid;
+  }
+
+  .print-totals {
+      width: 250px;
+  }
+
+  .print-totals > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 3px 0;
+      font-size: 8pt;
+  }
+
+  .print-totals > div span {
+      color: #666666;
+  }
+
+  .print-totals > div strong {
+      font-weight: 600;
+  }
+
+  .print-totals .print-grand-total {
+      margin-top: 3px;
+      padding-top: 6px;
+      border-top: 2px solid #222222;
+      font-size: 10pt;
+  }
+
+  .print-totals .print-grand-total span,
+  .print-totals .print-grand-total strong {
+      color: #111111;
+      font-weight: 700;
+  }
+
+  .print-note {
+      padding: 7px 10px;
+      border: 1px solid #dddddd;
+      border-radius: 5px;
+      font-size: 8pt;
+      line-height: 1.35;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+
+
+/* Sipariş Detay Sayfasi Print  */
+
+.order-print-document {
+  display: none;
+}
+
+@media print {
+  body {
+      background: #ffffff !important;
+  }
+
+  body > * {
+      visibility: hidden;
+  }
+
+  .orders-detail-page {
+      display: none !important;
+  }
+
+  .order-print-document {
+      display: block !important;
+      visibility: visible !important;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      background: #ffffff;
+      color: #111111;
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 0;
+      font-size: 9pt;
+  }
+
+  .order-print-document * {
+      visibility: visible !important;
+  }
+
+  .print-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      padding-bottom: 7px;
+  }
+
+  .print-logo {
+      color: #ee7402;
+      font-size: 21pt;
+      font-weight: 800;
+      letter-spacing: -0.6px;
+  }
+
+  .print-subtitle {
+      margin-top: 2px;
+      color: #666666;
+      font-size: 8pt;
+  }
+
+  .print-document-title {
+      text-align: right;
+  }
+
+  .print-document-title h1 {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: 700;
+  }
+
+  .print-document-title p {
+      margin-top: 2px;
+      color: #666666;
+      font-size: 8pt;
+  }
+
+  .print-divider {
+      height: 2px;
+      margin-bottom: 7px;
+      background: #ee7402;
+  }
+
+  .print-section {
+      margin-bottom: 7px;
+      break-inside: avoid;
+  }
+
+  .print-section h2 {
+      margin: 0 0 6px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid #dddddd;
+      font-size: 10pt;
+      font-weight: 700;
+  }
+
+  .print-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 20px;
+  }
+
+  .print-info-grid > div {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+  }
+
+  .print-info-grid span {
+      color: #666666;
+      font-size: 7.5pt;
+  }
+
+  .print-info-grid strong {
+      font-size: 8.5pt;
+      font-weight: 600;
+  }
+
+  .print-address-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 10px;
+  }
+
+  .print-address-grid .print-section {
+      margin-bottom: 0;
+  }
+
+  .print-info-box {
+      padding: 7px 10px;
+      border: 1px solid #dddddd;
+      border-radius: 5px;
+  }
+
+  .print-info-box p {
+      margin: 1px 0;
+      font-size: 8.5pt;
+      line-height: 1.3;
+  }
+
+  .print-info-box .print-strong {
+      margin-bottom: 4px;
+      font-weight: 700;
+  }
+
+  .print-contact {
+      margin-top: 4px !important;
+      padding-top: 4px;
+      border-top: 1px solid #eeeeee;
+  }
+
+  .print-contact span {
+      color: #666666;
+  }
+
+  .print-products-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+  }
+
+  .print-products-table th {
+      padding: 5px 6px;
+      border-top: 1px solid #cccccc;
+      border-bottom: 1px solid #cccccc;
+      background: #f7f7f7;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-align: left;
+  }
+
+  .print-products-table td {
+      padding: 6px;
+      border-bottom: 1px solid #e5e5e5;
+      vertical-align: top;
+      font-size: 8pt;
+      line-height: 1.3;
+      word-break: break-word;
+  }
+
+  .print-products-table th:nth-child(1) {
+      width: 28%;
+  }
+
+  .print-products-table th:nth-child(2) {
+      width: 24%;
+  }
+
+  .print-products-table th:nth-child(3) {
+      width: 8%;
+  }
+
+  .print-products-table th:nth-child(4) {
+      width: 14%;
+  }
+
+  .print-products-table th:nth-child(5) {
+      width: 10%;
+  }
+
+  .print-products-table th:nth-child(6) {
+      width: 16%;
+  }
+
+  .print-align-center {
+      text-align: center !important;
+  }
+
+  .print-align-right {
+      text-align: right !important;
+  }
+
+  .print-total-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+      break-inside: avoid;
+  }
+
+  .print-totals {
+      width: 250px;
+  }
+
+  .print-totals > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 3px 0;
+      font-size: 8pt;
+  }
+
+  .print-totals > div span {
+      color: #666666;
+  }
+
+  .print-totals > div strong {
+      font-weight: 600;
+  }
+
+  .print-totals .print-grand-total {
+      margin-top: 3px;
+      padding-top: 6px;
+      border-top: 2px solid #222222;
+      font-size: 10pt;
+  }
+
+  .print-totals .print-grand-total span,
+  .print-totals .print-grand-total strong {
+      color: #111111;
+      font-weight: 700;
+  }
+
+  .print-note {
+      padding: 7px 10px;
+      border: 1px solid #dddddd;
+      border-radius: 5px;
+      font-size: 8pt;
+      line-height: 1.35;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
 }

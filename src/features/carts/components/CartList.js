@@ -1,0 +1,742 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+    deleteCartItems,
+    getCartById,
+    getCarts,
+} from "@/features/carts/services/cartService";
+
+export default function CartList() {
+    const [carts, setCarts] = useState([]);
+    const [search, setSearch] = useState("");
+    const [appliedSearch, setAppliedSearch] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    const [pageIndex, setPageIndex] = useState(0);
+    const pageSize = 10;
+
+    const [pagination, setPagination] = useState({
+        count: 0,
+        pages: 0,
+        hasPrevious: false,
+        hasNext: false,
+    });
+
+    const [selectedCart, setSelectedCart] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [detailError, setDetailError] = useState("");
+
+    const [deletingItemId, setDeletingItemId] = useState(null);
+    const [deleteError, setDeleteError] = useState("");
+
+    const [itemToDelete, setItemToDelete] = useState(null);
+
+    async function loadCarts() {
+        try {
+            setLoading(true);
+            setError("");
+
+            const response = await getCarts({
+                params: {
+                    "PageRequest.PageIndex": pageIndex,
+                    "PageRequest.PageSize": pageSize,
+                    Search: appliedSearch || undefined,
+                },
+            });
+
+            setCarts(response.items ?? []);
+
+            setPagination({
+                count: response.count ?? 0,
+                pages: response.pages ?? 0,
+                hasPrevious: response.hasPrevious ?? false,
+                hasNext: response.hasNext ?? false,
+            });
+        } catch (error) {
+            setError(error.message || "Sepetler yüklenirken bir hata oluştu.");
+            setCarts([]);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchCarts() {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response = await getCarts({
+                    params: {
+                        "PageRequest.PageIndex": pageIndex,
+                        "PageRequest.PageSize": pageSize,
+                        Search: appliedSearch || undefined,
+                    },
+                });
+
+                if (cancelled) {
+                    return;
+                }
+
+                setCarts(response.items ?? []);
+
+                setPagination({
+                    count: response.count ?? 0,
+                    pages: response.pages ?? 0,
+                    hasPrevious: response.hasPrevious ?? false,
+                    hasNext: response.hasNext ?? false,
+                });
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                setError(
+                    error.message || "Sepetler yüklenirken bir hata oluştu.",
+                );
+                setCarts([]);
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        fetchCarts();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [pageIndex, appliedSearch]);
+
+    async function handleSearchSubmit(event) {
+        event.preventDefault();
+
+        if (pageIndex === 0) {
+            setAppliedSearch(search.trim());
+            return;
+        }
+
+        setPageIndex(0);
+        setAppliedSearch(search.trim());
+    }
+
+    function handleClearSearch() {
+        setSearch("");
+
+        if (pageIndex === 0) {
+            setAppliedSearch("");
+            return;
+        }
+
+        setPageIndex(0);
+        setAppliedSearch("");
+    }
+
+    async function handleOpenCart(cartId) {
+        try {
+            setSelectedCart(null);
+            setDetailError("");
+            setDeleteError("");
+            setDetailLoading(true);
+
+            const response = await getCartById(cartId);
+
+            setSelectedCart(response.data ?? null);
+        } catch (error) {
+            setDetailError(
+                error.message || "Sepet detayı yüklenirken bir hata oluştu.",
+            );
+        } finally {
+            setDetailLoading(false);
+        }
+    }
+
+    function handleCloseCart() {
+        if (deletingItemId) {
+            return;
+        }
+
+        setSelectedCart(null);
+        setDetailError("");
+        setDeleteError("");
+        setItemToDelete(null);
+    }
+
+    function handleRequestDeleteItem(item) {
+        setDeleteError("");
+        setItemToDelete(item);
+    }
+
+    function handleCancelDeleteItem() {
+        if (deletingItemId) {
+            return;
+        }
+
+        setItemToDelete(null);
+    }
+
+    async function handleDeleteItem() {
+        if (!selectedCart || !itemToDelete) {
+            return;
+        }
+
+        try {
+            setDeletingItemId(itemToDelete.cartItemId);
+            setDeleteError("");
+
+            await deleteCartItems({
+                items: [
+                    {
+                        cartId: selectedCart.cartId,
+                        cartItemId: itemToDelete.cartItemId,
+                    },
+                ],
+            });
+
+            const response = await getCartById(selectedCart.cartId);
+            const updatedCart = response.data ?? null;
+
+            setSelectedCart(updatedCart);
+            setItemToDelete(null);
+
+            await loadCarts();
+        } catch (error) {
+            setDeleteError(
+                error.message || "Sepet ürünü silinirken bir hata oluştu.",
+            );
+        } finally {
+            setDeletingItemId(null);
+        }
+    }
+
+    function handlePreviousPage() {
+        if (pagination.hasPrevious && !loading) {
+            setPageIndex((current) => current - 1);
+        }
+    }
+
+    function handleNextPage() {
+        if (pagination.hasNext && !loading) {
+            setPageIndex((current) => current + 1);
+        }
+    }
+
+    function formatPrice(value) {
+        if (value === null || value === undefined) {
+            return "-";
+        }
+
+        return new Intl.NumberFormat("tr-TR", {
+            style: "currency",
+            currency: "TRY",
+        }).format(value);
+    }
+
+    function getItemPrice(item) {
+        return item.discountPrice ?? item.price;
+    }
+
+    return (
+        <>
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-2xl font-semibold text-gray-900">
+                        Sepetler
+                    </h1>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                        Müşteri ve misafir sepetlerini görüntüleyin.
+                    </p>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <form
+                        onSubmit={handleSearchSubmit}
+                        className="flex gap-3"
+                    >
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(event) =>
+                                setSearch(event.target.value)
+                            }
+                            placeholder="Müşteri, e-posta veya sepet ara..."
+                            className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none transition focus:border-[#EE7402] focus:ring-1 focus:ring-[#EE7402]"
+                        />
+
+                        <button
+                            type="submit"
+                            className="rounded-lg bg-[#EE7402] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#d86600]"
+                        >
+                            Ara
+                        </button>
+
+                        {appliedSearch && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                            >
+                                Temizle
+                            </button>
+                        )}
+                    </form>
+                </div>
+
+                {error && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
+                    </div>
+                )}
+
+                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead className="border-b border-gray-200 bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Müşteri
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        E-posta
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Telefon
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Tür
+                                    </th>
+
+                                    <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        Ürün Adedi
+                                    </th>
+
+                                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                        İşlemler
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody className="divide-y divide-gray-200">
+                                {loading ? (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="px-6 py-10 text-center text-sm text-gray-500"
+                                        >
+                                            Sepetler yükleniyor...
+                                        </td>
+                                    </tr>
+                                ) : carts.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={6}
+                                            className="px-6 py-10 text-center text-sm text-gray-500"
+                                        >
+                                            Sepet bulunamadı.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    carts.map((cart) => (
+                                        <tr
+                                            key={cart.cartId}
+                                            className="transition hover:bg-gray-50"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {cart.customerName ||
+                                                        "Misafir"}
+                                                </div>
+                                            </td>
+
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {cart.customerEmail || "-"}
+                                            </td>
+
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {cart.customerPhoneNumber ||
+                                                    "-"}
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${cart.userId
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-orange-100 text-orange-700"
+                                                        }`}
+                                                >
+                                                    {cart.userId
+                                                        ? "Kullanıcı"
+                                                        : "Misafir"}
+                                                </span>
+                                            </td>
+
+                                            <td className="px-6 py-4 text-center text-sm font-medium text-gray-900">
+                                                {cart.totalItemCount}
+                                            </td>
+
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleOpenCart(
+                                                            cart.cartId,
+                                                        )
+                                                    }
+                                                    className="text-sm font-medium text-[#EE7402] transition hover:text-[#d86600]"
+                                                >
+                                                    Görüntüle
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
+                        <p className="text-sm text-gray-500">
+                            Toplam {pagination.count} sepet
+                        </p>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handlePreviousPage}
+                                disabled={
+                                    !pagination.hasPrevious || loading
+                                }
+                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Önceki
+                            </button>
+
+                            <span className="px-2 text-sm text-gray-600">
+                                {pagination.pages > 0 ? pageIndex + 1 : 0} /{" "}
+                                {pagination.pages}
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={handleNextPage}
+                                disabled={!pagination.hasNext || loading}
+                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Sonraki
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {(selectedCart || detailLoading) && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-xl">
+                        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    Sepet Detayı
+                                </h2>
+
+                                {selectedCart && (
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        {selectedCart.cartId}
+                                    </p>
+                                )}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={handleCloseCart}
+                                disabled={!!deletingItemId}
+                                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <svg
+                                    className="h-5 w-5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="max-h-[calc(90vh-80px)] overflow-y-auto p-6">
+                            {detailLoading ? (
+                                <div className="py-16 text-center text-sm text-gray-500">
+                                    Sepet detayı yükleniyor...
+                                </div>
+                            ) : detailError ? (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {detailError}
+                                </div>
+                            ) : selectedCart ? (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                        <div className="rounded-lg border border-gray-200 p-4">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Müşteri
+                                            </p>
+
+                                            <p className="mt-2 text-sm font-medium text-gray-900">
+                                                {selectedCart.customerName ||
+                                                    "Misafir"}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 p-4">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                E-posta
+                                            </p>
+
+                                            <p className="mt-2 text-sm text-gray-900">
+                                                {selectedCart.customerEmail ||
+                                                    "-"}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 p-4">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Telefon
+                                            </p>
+
+                                            <p className="mt-2 text-sm text-gray-900">
+                                                {selectedCart.customerPhoneNumber ||
+                                                    "-"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <div className="rounded-lg border border-gray-200 p-4">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Sepet Türü
+                                            </p>
+
+                                            <span
+                                                className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${selectedCart.userId
+                                                    ? "bg-blue-100 text-blue-700"
+                                                    : "bg-orange-100 text-orange-700"
+                                                    }`}
+                                            >
+                                                {selectedCart.userId
+                                                    ? "Kullanıcı"
+                                                    : "Misafir"}
+                                            </span>
+                                        </div>
+
+                                        <div className="rounded-lg border border-gray-200 p-4">
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                Cart Session ID
+                                            </p>
+
+                                            <p className="mt-2 break-all text-sm text-gray-900">
+                                                {selectedCart.cartSessionId ||
+                                                    "-"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <h3 className="text-base font-semibold text-gray-900">
+                                                Sepet Ürünleri
+                                            </h3>
+
+                                            <span className="text-sm text-gray-500">
+                                                Toplam{" "}
+                                                {
+                                                    selectedCart.totalItemCount
+                                                }{" "}
+                                                adet
+                                            </span>
+                                        </div>
+
+                                        <div className="overflow-hidden rounded-lg border border-gray-200">
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full">
+                                                    <thead className="border-b border-gray-200 bg-gray-50">
+                                                        <tr>
+                                                            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                                                Ürün
+                                                            </th>
+
+                                                            <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                                                SKU
+                                                            </th>
+
+                                                            <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                                                Fiyat
+                                                            </th>
+
+                                                            <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                                                                Adet
+                                                            </th>
+
+                                                            <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                                                İşlem
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody className="divide-y divide-gray-200">
+                                                        {selectedCart.items
+                                                            ?.length ? (
+                                                            selectedCart.items.map(
+                                                                (item) => (
+                                                                    <tr
+                                                                        key={
+                                                                            item.cartItemId
+                                                                        }
+                                                                    >
+                                                                        <td className="px-4 py-4">
+                                                                            <div className="max-w-md text-sm font-medium text-gray-900">
+                                                                                {
+                                                                                    item.productName
+                                                                                }
+                                                                            </div>
+
+                                                                            <div className="mt-1 text-xs text-gray-500">
+                                                                                {
+                                                                                    item.productId
+                                                                                }
+                                                                            </div>
+                                                                        </td>
+
+                                                                        <td className="px-4 py-4 text-sm text-gray-600">
+                                                                            {
+                                                                                item.sku
+                                                                            }
+                                                                        </td>
+
+                                                                        <td className="px-4 py-4 text-right">
+                                                                            {item.discountPriceIncludingTax !== null ? (
+                                                                                <div>
+                                                                                    <div className="text-xs text-gray-400 line-through">
+                                                                                        {formatPrice(item.priceIncludingTax)}
+                                                                                    </div>
+
+                                                                                    <div className="text-sm font-semibold text-[#EE7402]">
+                                                                                        {formatPrice(item.discountPriceIncludingTax)}
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="text-sm font-medium text-gray-900">
+                                                                                    {formatPrice(item.priceIncludingTax)}
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+
+                                                                        <td className="px-4 py-4 text-center text-sm font-medium text-gray-900">
+                                                                            {
+                                                                                item.quantity
+                                                                            }
+                                                                        </td>
+
+                                                                        <td className="px-4 py-4 text-right">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    handleRequestDeleteItem(
+                                                                                        item,
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    !!deletingItemId
+                                                                                }
+                                                                                className="text-sm font-medium text-red-600 transition hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                            >
+                                                                                Sil
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ),
+                                                            )
+                                                        ) : (
+                                                            <tr>
+                                                                <td
+                                                                    colSpan={5}
+                                                                    className="px-4 py-10 text-center text-sm text-gray-500"
+                                                                >
+                                                                    Bu sepette
+                                                                    ürün
+                                                                    bulunmuyor.
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {itemToDelete && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
+                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                            Ürünü Sepetten Sil
+                        </h3>
+
+                        <p className="mt-2 text-sm leading-6 text-gray-600">
+                            <span className="font-medium text-gray-900">
+                                {itemToDelete.productName}
+                            </span>{" "}
+                            ürününü bu sepetten silmek istediğinize emin
+                            misiniz?
+                        </p>
+
+                        {deleteError && (
+                            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700">
+                                {deleteError}
+                            </div>
+                        )}
+
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={handleCancelDeleteItem}
+                                disabled={!!deletingItemId}
+                                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Vazgeç
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDeleteItem}
+                                disabled={!!deletingItemId}
+                                className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {deletingItemId
+                                    ? "Siliniyor..."
+                                    : deleteError
+                                        ? "Tekrar Dene"
+                                        : "Evet, Sil"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
