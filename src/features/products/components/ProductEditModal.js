@@ -40,6 +40,7 @@ function createInitialForm(product) {
         slug: product?.slug ?? "",
         sku: product?.sku ?? "",
         barcode: product?.barcode ?? "",
+        mpn: product?.mpn ?? "",
         description: product?.description ?? "",
         price: product?.price ?? "",
         discountPrice: hasDiscount ? product.discountPrice : "",
@@ -511,6 +512,7 @@ export default function ProductEditModal({
                 categoryId: form.categoryId,
                 name: form.name.trim(),
                 barcode: form.barcode.trim() || null,
+                mpn: form.mpn.trim() || null,
                 description: form.description.trim(),
                 price: Number(form.price),
                 discountPrice: form.isDiscounted
@@ -723,6 +725,20 @@ export default function ProductEditModal({
                                             name="barcode"
                                             value={form.barcode}
                                             onChange={handleChange}
+                                            className="h-10 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-primary"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-text-primary">
+                                            Üretici Ürün Kodu
+                                        </label>
+
+                                        <input
+                                            name="mpn"
+                                            value={form.mpn}
+                                            onChange={handleChange}
+                                            placeholder="Üretici ürün/parça kodu"
                                             className="h-10 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-primary"
                                         />
                                     </div>
