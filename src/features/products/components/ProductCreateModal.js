@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, X } from "lucide-react";
+import { Check, ChevronDown, LoaderCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { getCategories } from "@/features/categories/services/categoryService";
@@ -45,6 +45,7 @@ export default function ProductCreateModal({
     const [error, setError] = useState(null);
 
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
 
     useEffect(() => {
         if (!isOpen) {
@@ -87,11 +88,22 @@ export default function ProductCreateModal({
         };
     }, [isOpen]);
 
+    const filteredBrands = (brands ?? []).filter((brand) => {
+        const search = form.brand.trim().toLocaleLowerCase("tr-TR");
+
+        if (!search) {
+            return true;
+        }
+
+        return brand.toLocaleLowerCase("tr-TR").includes(search);
+    });
+
     function resetForm() {
         setForm({ ...INITIAL_FORM });
         setImages([]);
         setError(null);
         setIsCategoryModalOpen(false);
+        setIsBrandDropdownOpen(false);
     }
 
     function handleClose() {
@@ -194,7 +206,11 @@ export default function ProductCreateModal({
             }
 
             appendFormValue(formData, "TaxRate", Number(form.taxRate));
-            appendFormValue(formData, "StockQuantity", Number(form.stockQuantity));
+            appendFormValue(
+                formData,
+                "StockQuantity",
+                Number(form.stockQuantity),
+            );
             appendFormValue(formData, "Brand", form.brand.trim());
             appendFormValue(formData, "IsActive", form.isActive);
             appendFormValue(formData, "IsWeeklyDeal", form.isWeeklyDeal);
@@ -320,25 +336,72 @@ export default function ProductCreateModal({
                                     />
                                 </div>
 
-                                <div>
+                                <div className="relative">
                                     <label className="mb-1.5 block text-xs font-medium text-text-primary">
                                         Marka
                                     </label>
 
-                                    <select
-                                        name="brand"
-                                        value={form.brand}
-                                        onChange={handleChange}
-                                        className="h-10 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-primary"
-                                    >
-                                        <option value="">Marka seçin</option>
+                                    <div className="relative">
+                                        <input
+                                            name="brand"
+                                            value={form.brand}
+                                            onChange={(event) => {
+                                                handleChange(event);
+                                                setIsBrandDropdownOpen(true);
+                                            }}
+                                            onFocus={() => setIsBrandDropdownOpen(true)}
+                                            placeholder="Marka adı"
+                                            className="h-10 w-full rounded-lg border border-border bg-white px-3 pr-10 text-sm outline-none focus:border-primary"
+                                        />
 
-                                        {brands.map((item) => (
-                                            <option key={item} value={item}>
-                                                {item}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setIsBrandDropdownOpen((current) => !current)
+                                            }
+                                            className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-text-secondary"
+                                        >
+                                            <ChevronDown className="h-4 w-4" />
+                                        </button>
+                                    </div>
+
+                                    {isBrandDropdownOpen && (
+                                        <div className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-white py-1 shadow-lg">
+                                            {filteredBrands.map((brand) => (
+                                                <button
+                                                    key={brand}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setForm((current) => ({
+                                                            ...current,
+                                                            brand,
+                                                        }));
+
+                                                        setIsBrandDropdownOpen(false);
+                                                    }}
+                                                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-text-primary hover:bg-background-soft"
+                                                >
+                                                    <span>{brand}</span>
+
+                                                    {form.brand === brand && (
+                                                        <Check className="h-4 w-4 text-primary" />
+                                                    )}
+                                                </button>
+                                            ))}
+
+                                            {!filteredBrands.length && form.brand.trim() && (
+                                                <div className="px-3 py-2 text-sm text-text-secondary">
+                                                    {form.brand} mevcut markalar arasında bulunamadı.
+                                                </div>
+                                            )}
+
+                                            {!filteredBrands.length && !form.brand.trim() && (
+                                                <div className="px-3 py-2 text-sm text-text-secondary">
+                                                    Henüz marka bulunmuyor.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div>
