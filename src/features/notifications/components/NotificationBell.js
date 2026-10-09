@@ -12,66 +12,50 @@ export default function NotificationBell() {
 
     useEffect(() => {
         function handleOutsideClick(event) {
-            if (
-                containerRef.current &&
-                !containerRef.current.contains(
-                    event.target,
-                )
-            ) {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+
+        function handleEscapeKey(event) {
+            if (event.key === "Escape") {
                 setIsOpen(false);
             }
         }
 
         if (isOpen) {
-            document.addEventListener(
-                "mousedown",
-                handleOutsideClick,
-            );
+            document.addEventListener("mousedown", handleOutsideClick);
+            document.addEventListener("touchstart", handleOutsideClick);
+            document.addEventListener("keydown", handleEscapeKey);
         }
 
         return () => {
-            document.removeEventListener(
-                "mousedown",
-                handleOutsideClick,
-            );
+            document.removeEventListener("mousedown", handleOutsideClick);
+            document.removeEventListener("touchstart", handleOutsideClick);
+            document.removeEventListener("keydown", handleEscapeKey);
         };
     }, [isOpen]);
 
     return (
-        <div
-            ref={containerRef}
-            className="relative"
-        >
+        <div ref={containerRef} className="relative shrink-0">
             <button
                 type="button"
-                onClick={() =>
-                    setIsOpen(
-                        (currentValue) =>
-                            !currentValue,
-                    )
-                }
-                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-background-soft hover:text-primary"
+                onClick={() => setIsOpen((currentValue) => !currentValue)}
+                className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-background-soft hover:text-primary"
                 aria-label="Bildirimler"
                 aria-expanded={isOpen}
+                aria-haspopup="true"
             >
                 <Bell size={20} />
 
                 {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
-                        {unreadCount > 99
-                            ? "99+"
-                            : unreadCount}
+                        {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                 )}
             </button>
 
-            {isOpen && (
-                <NotificationDropdown
-                    onClose={() =>
-                        setIsOpen(false)
-                    }
-                />
-            )}
+            {isOpen && <NotificationDropdown onClose={() => setIsOpen(false)} />}
         </div>
     );
 }

@@ -1,29 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDashboardData } from "@/features/dashboard/services/dashboardService";
 
 function StatCard({ title, value, description, icon }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-sm font-medium text-gray-500">
+        <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-5 text-gray-500">
                         {title}
                     </p>
 
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">
+                    <p className="mt-2 break-words text-2xl font-semibold leading-tight text-gray-900 sm:text-3xl">
                         {value}
                     </p>
 
                     {description && (
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-2 text-xs leading-5 text-gray-400">
                             {description}
                         </p>
                     )}
                 </div>
 
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EE7402]/10 text-[#EE7402]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#EE7402]/10 text-[#EE7402] sm:h-10 sm:w-10">
                     {icon}
                 </div>
             </div>
@@ -45,10 +45,12 @@ function formatPrice(value) {
 
 function SummaryRow({ label, value }) {
     return (
-        <div className="flex items-center justify-between border-b border-gray-100 py-3 last:border-b-0">
-            <span className="text-sm text-gray-600">{label}</span>
+        <div className="flex items-start justify-between gap-4 border-b border-gray-100 py-3 last:border-b-0">
+            <span className="min-w-0 flex-1 text-sm leading-5 text-gray-600">
+                {label}
+            </span>
 
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="shrink-0 text-right text-sm font-semibold text-gray-900">
                 {formatNumber(value)}
             </span>
         </div>
@@ -110,9 +112,48 @@ function DashboardIcon({ type }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
         >
             {paths[type] ?? paths.orders}
         </svg>
+    );
+}
+
+function DashboardHeading({ description }) {
+    return (
+        <div className="min-w-0">
+            <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+                Dashboard
+            </h1>
+
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+                {description}
+            </p>
+        </div>
+    );
+}
+
+function LoadingSkeleton() {
+    return (
+        <div className="space-y-5 sm:space-y-6">
+            <div>
+                <DashboardHeading description="Mağazanızın genel durumuna buradan göz atabilirsiniz." />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-6">
+                {[1, 2, 3, 4, 5, 6].map((item) => (
+                    <div
+                        key={item}
+                        className="h-28 animate-pulse rounded-xl border border-gray-200 bg-white sm:h-32"
+                    />
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+                <div className="h-64 animate-pulse rounded-xl border border-gray-200 bg-white sm:h-72" />
+                <div className="h-64 animate-pulse rounded-xl border border-gray-200 bg-white sm:h-72" />
+            </div>
+        </div>
     );
 }
 
@@ -121,7 +162,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    async function loadDashboard() {
+    const loadDashboard = useCallback(async () => {
         try {
             setLoading(true);
             setError("");
@@ -138,7 +179,7 @@ export default function Dashboard() {
         } finally {
             setLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -150,21 +191,17 @@ export default function Dashboard() {
 
                 const response = await getDashboardData();
 
-                if (cancelled) {
-                    return;
+                if (!cancelled) {
+                    setData(response);
                 }
-
-                setData(response);
             } catch (error) {
-                if (cancelled) {
-                    return;
+                if (!cancelled) {
+                    setError(
+                        error.message ||
+                        "Dashboard verileri yüklenirken bir hata oluştu.",
+                    );
+                    setData(null);
                 }
-
-                setError(
-                    error.message ||
-                    "Dashboard verileri yüklenirken bir hata oluştu.",
-                );
-                setData(null);
             } finally {
                 if (!cancelled) {
                     setLoading(false);
@@ -180,56 +217,22 @@ export default function Dashboard() {
     }, []);
 
     if (loading) {
-        return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                        Dashboard
-                    </h1>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                        Mağazanızın genel durumuna buradan göz atabilirsiniz.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
-                    {[1, 2, 3, 4, 5, 6].map((item) => (
-                        <div
-                            key={item}
-                            className="h-32 animate-pulse rounded-xl border border-gray-200 bg-gray-100"
-                        />
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div className="h-72 animate-pulse rounded-xl border border-gray-200 bg-gray-100" />
-                    <div className="h-72 animate-pulse rounded-xl border border-gray-200 bg-gray-100" />
-                </div>
-            </div>
-        );
+        return <LoadingSkeleton />;
     }
 
     if (error) {
         return (
-            <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                        Dashboard
-                    </h1>
+            <div className="space-y-5 sm:space-y-6">
+                <DashboardHeading description="Mağazanızın genel durumuna buradan göz atabilirsiniz." />
 
-                    <p className="mt-1 text-sm text-gray-500">
-                        Mağazanızın genel durumuna buradan göz atabilirsiniz.
-                    </p>
-                </div>
-
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:p-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span>{error}</span>
+                        <p className="min-w-0 leading-6">{error}</p>
 
                         <button
                             type="button"
                             onClick={loadDashboard}
-                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                            className="min-h-10 w-full shrink-0 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 sm:w-auto"
                         >
                             Tekrar Dene
                         </button>
@@ -240,28 +243,20 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-5 sm:space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                        Dashboard
-                    </h1>
-
-                    <p className="mt-1 text-sm text-gray-500">
-                        Mağazanızın genel durumuna buradan göz atabilirsiniz.
-                    </p>
-                </div>
+                <DashboardHeading description="Mağazanızın genel durumuna buradan göz atabilirsiniz." />
 
                 <button
                     type="button"
                     onClick={loadDashboard}
-                    className="self-start rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:self-auto"
+                    className="min-h-10 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
                 >
                     Yenile
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-6">
                 <StatCard
                     title="Toplam Sipariş"
                     value={formatNumber(data.orders)}
@@ -301,94 +296,81 @@ export default function Dashboard() {
                 />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <div className="mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">
+            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="mb-3 sm:mb-4">
+                        <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
                             Mağaza Özeti
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm leading-5 text-gray-500">
                             Mağazadaki temel kaynakların mevcut durumu.
                         </p>
                     </div>
 
                     <div>
-                        <SummaryRow
-                            label="Kategoriler"
-                            value={data.categories}
-                        />
-
-                        <SummaryRow
-                            label="Sepetler"
-                            value={data.carts}
-                        />
-
+                        <SummaryRow label="Kategoriler" value={data.categories} />
+                        <SummaryRow label="Sepetler" value={data.carts} />
                         <SummaryRow
                             label="Aktif kargo yöntemleri"
                             value={data.activeShippingMethods}
                         />
-
                         <SummaryRow
                             label="Vitrin ürünleri"
                             value={data.productCollections}
                         />
                     </div>
-                </div>
+                </section>
 
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <div className="mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">
+                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="mb-3 sm:mb-4">
+                        <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
                             Sistem Özeti
                         </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
+                        <p className="mt-1 text-sm leading-5 text-gray-500">
                             Yönetim panelindeki mevcut verilerin kısa özeti.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-lg bg-gray-50 p-4">
+                    <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:gap-4">
+                        <div className="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                             <p className="text-xs font-medium text-gray-500">
                                 Sipariş
                             </p>
-
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            <p className="mt-1 break-words text-xl font-semibold text-gray-900 sm:text-2xl">
                                 {formatNumber(data.orders)}
                             </p>
                         </div>
 
-                        <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                             <p className="text-xs font-medium text-gray-500">
                                 Kullanıcı
                             </p>
-
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            <p className="mt-1 break-words text-xl font-semibold text-gray-900 sm:text-2xl">
                                 {formatNumber(data.users)}
                             </p>
                         </div>
 
-                        <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                             <p className="text-xs font-medium text-gray-500">
                                 Aktif Ürün
                             </p>
-
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            <p className="mt-1 break-words text-xl font-semibold text-gray-900 sm:text-2xl">
                                 {formatNumber(data.activeProducts)}
                             </p>
                         </div>
 
-                        <div className="rounded-lg bg-gray-50 p-4">
+                        <div className="min-w-0 rounded-lg bg-gray-50 p-3 sm:p-4">
                             <p className="text-xs font-medium text-gray-500">
                                 Aktif Abone
                             </p>
-
-                            <p className="mt-1 text-2xl font-semibold text-gray-900">
+                            <p className="mt-1 break-words text-xl font-semibold text-gray-900 sm:text-2xl">
                                 {formatNumber(data.activeNewsletterSubscribers)}
                             </p>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     );

@@ -351,7 +351,7 @@ export default function NotificationsPage() {
                             <button
                                 type="button"
                                 onClick={markAllAsRead}
-                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+                                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 sm:w-auto"
                             >
                                 <CheckCheck className="h-4 w-4" />
                                 Tümünü Okundu Yap
@@ -395,7 +395,7 @@ export default function NotificationsPage() {
                                         !current,
                                 )
                             }
-                            className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors ${showFilters || hasFilters
+                            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors sm:w-auto ${showFilters || hasFilters
                                 ? "border-primary bg-orange-50 text-primary"
                                 : "border-border text-text-primary hover:bg-background-soft"
                                 }`}
@@ -477,7 +477,7 @@ export default function NotificationsPage() {
 
                     <div className="flex flex-col gap-3 border-t border-border pt-4">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
+                            <div className="flex flex-col items-stretch gap-3 text-sm text-text-secondary sm:flex-row sm:flex-wrap sm:items-center">
                                 <div className="flex items-center gap-2">
                                     <span>
                                         Sayfa başına
@@ -489,7 +489,7 @@ export default function NotificationsPage() {
                                             onChange={
                                                 handlePageSizeChange
                                             }
-                                            className="h-9 appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
+                                            className="h-9 max-w-full appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
                                             aria-label="Sayfa başına bildirim sayısı"
                                         >
                                             {PAGE_SIZE_OPTIONS.map(
@@ -525,7 +525,7 @@ export default function NotificationsPage() {
                                             onChange={
                                                 handleSortByChange
                                             }
-                                            className="h-9 appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
+                                            className="h-9 max-w-full appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
                                             aria-label="Bildirim sıralaması"
                                         >
                                             {SORT_OPTIONS.map(
@@ -555,7 +555,7 @@ export default function NotificationsPage() {
                                             onChange={
                                                 handleSortDirectionChange
                                             }
-                                            className="h-9 appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
+                                            className="h-9 max-w-full appearance-none rounded-lg border border-border bg-white px-3 pr-8 text-sm font-medium text-text-primary outline-none focus:border-primary"
                                             aria-label="Sıralama yönü"
                                         >
                                             {SORT_DIRECTION_OPTIONS.map(
@@ -663,14 +663,14 @@ export default function NotificationsPage() {
                             return (
                                 <div
                                     key={order.orderId}
-                                    className={`rounded-xl border mb-3 p-6 transition-colors hover:bg-gray-100 ${isUnread
+                                    className={`mb-3 rounded-xl border p-3 transition-colors hover:bg-gray-100 sm:p-6 ${isUnread
                                             ? "border-primary/20 bg-orange-100 hover:bg-orange-200!"
                                             : "border-border bg-white"
                                         }`}
                                 >
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                                         <div
-                                            className={`flex h-10 w-10 mb-10 shrink-0 items-center justify-center rounded-full ${isUnread
+                                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isUnread
                                                     ? "bg-primary/10 text-primary"
                                                     : "bg-background-soft text-text-secondary"
                                                 }`}
@@ -706,13 +706,13 @@ export default function NotificationsPage() {
                                             </div>
 
                                             <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                                                <div className="grid flex-1 gap-2 sm:grid-cols-3">
+                                            <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-2">
                                                     <div>
                                                         <p className="text-xs font-medium text-text-secondary">
                                                             Sipariş
                                                         </p>
 
-                                                        <p className="mt-0.5 font-semibold text-text-primary">
+                                                        <p className="mt-0.5 break-all font-semibold text-text-primary">
                                                             #{order.orderNumber}
                                                         </p>
                                                     </div>
@@ -722,7 +722,7 @@ export default function NotificationsPage() {
                                                             Müşteri
                                                         </p>
 
-                                                        <p className="mt-0.5 font-medium text-text-primary">
+                                                        <p className="mt-0.5 break-words font-medium text-text-primary">
                                                             {getCustomerName(order)}
                                                         </p>
                                                     </div>
@@ -745,7 +745,7 @@ export default function NotificationsPage() {
                                                             order.orderId,
                                                         )
                                                     }
-                                                    className="inline-flex w-32 h-11 mt-2.5 shrink-0 items-center justify-center rounded-lg border border-border bg-white px-3 text-xs font-semibold text-text-primary transition-colors hover:border-primary hover:text-primary hover:bg-amber-100"
+                                                    className="mt-1 inline-flex h-11 w-full shrink-0 items-center justify-center rounded-lg border border-border bg-white px-3 text-xs font-semibold text-text-primary transition-colors hover:border-primary hover:text-primary hover:bg-amber-100 sm:mt-2.5 sm:w-32"
                                                 >
                                                     Siparişe Git
                                                 </Link>
@@ -781,7 +781,7 @@ export default function NotificationsPage() {
                             disabled={
                                 !pagination.hasPrevious
                             }
-                            className="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary transition-colors hover:bg-background-soft disabled:cursor-not-allowed disabled:opacity-40"
+                            className="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-white px-2 text-sm font-semibold text-text-primary transition-colors hover:bg-background-soft disabled:cursor-not-allowed disabled:opacity-40 sm:px-3"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             Önceki
@@ -838,7 +838,7 @@ export default function NotificationsPage() {
                             disabled={
                                 !pagination.hasNext
                             }
-                            className="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary transition-colors hover:bg-background-soft disabled:cursor-not-allowed disabled:opacity-40"
+                            className="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-white px-2 text-sm font-semibold text-text-primary transition-colors hover:bg-background-soft disabled:cursor-not-allowed disabled:opacity-40 sm:px-3"
                         >
                             Sonraki
                             <ChevronRight className="h-4 w-4" />

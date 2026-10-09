@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -12,10 +12,9 @@ import NotificationPopup from "@/features/notifications/components/NotificationP
 export default function AdminLayout({ children }) {
     const router = useRouter();
     const { isAuthenticated, isLoading } = useAuth();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    useOrderNotifications(
-        isAuthenticated && !isLoading,
-    );
+    useOrderNotifications(isAuthenticated && !isLoading);
 
     useEffect(() => {
         if (isLoading) {
@@ -25,11 +24,29 @@ export default function AdminLayout({ children }) {
         if (!isAuthenticated) {
             router.replace("/giris");
         }
-    }, [
-        isAuthenticated,
-        isLoading,
-        router,
-    ]);
+    }, [isAuthenticated, isLoading, router]);
+
+    useEffect(() => {
+        if (!isMobileMenuOpen) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+
+        function handleKeyDown(event) {
+            if (event.key === "Escape") {
+                setIsMobileMenuOpen(false);
+            }
+        }
+
+        document.body.style.overflow = "hidden";
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isMobileMenuOpen]);
 
     if (isLoading || !isAuthenticated) {
         return (
@@ -41,13 +58,28 @@ export default function AdminLayout({ children }) {
 
     return (
         <NotificationProvider>
-            <div className="min-h-screen bg-background-soft">
-                <AdminSidebar />
+            <div className="min-h-screen overflow-x-clip bg-background-soft">
+                <AdminSidebar
+                    isMobileOpen={isMobileMenuOpen}
+                    onClose={() => setIsMobileMenuOpen(false)}
+                />
 
-                <AdminHeader />
+                {isMobileMenuOpen && (
+                    <button
+                        type="button"
+                        aria-label="Menüyü kapat"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[1px] lg:hidden"
+                    />
+                )}
 
-                <main className="ml-64 min-h-screen pt-16">
-                    <div className="p-6">
+                <AdminHeader
+                    onMenuClick={() => setIsMobileMenuOpen((open) => !open)}
+                    isMobileMenuOpen={isMobileMenuOpen}
+                />
+
+                <main className="min-h-screen min-w-0 pt-16 lg:ml-64">
+                    <div className="min-w-0 p-3 sm:p-4 lg:p-6">
                         {children}
                     </div>
                 </main>

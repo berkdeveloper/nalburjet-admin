@@ -389,7 +389,7 @@ export default function ProductList() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-text-primary">
             Ürünler
@@ -404,7 +404,7 @@ export default function ProductList() {
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
-          className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+          className="h-10 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:w-auto"
         >
           + Yeni Ürün
         </button>
@@ -457,7 +457,7 @@ export default function ProductList() {
 
           <button
             type="submit"
-            className="flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             <Search className="h-4 w-4" />
             Ara
@@ -465,7 +465,7 @@ export default function ProductList() {
         </form>
 
         {hasFilters && (
-          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+          <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-text-secondary">
               Filtreler uygulanıyor.
             </p>
@@ -483,7 +483,7 @@ export default function ProductList() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-white">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-3 py-4 sm:px-5">
           <div>
             <p className="text-sm font-semibold text-text-primary">
               Ürün Listesi
@@ -528,7 +528,7 @@ export default function ProductList() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[1400px]">
                 <thead>
                   <tr className="border-b border-border bg-background-soft">
@@ -587,10 +587,10 @@ export default function ProductList() {
                     );
 
                     const hasDiscount =
-                      product?.discountPriceIncludingTax !==
-                      null &&
-                      product?.discountPriceIncludingTax !==
-                      undefined;
+                      product.discountPriceIncludingTax != null &&
+                      product.priceIncludingTax != null &&
+                      product.discountPriceIncludingTax > 0 &&
+                      product.discountPriceIncludingTax < product.priceIncludingTax;
 
                     const bestSeller =
                       getCollectionForProduct(
@@ -844,7 +844,198 @@ export default function ProductList() {
               </table>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-3 p-3 md:hidden">
+              {products.map((product) => {
+                const imageUrl = getProductImage(product);
+                const stockStatus = getStockStatus(product);
+                const statusBadge = getStatusBadge(product.isActive);
+
+                const hasDiscount =
+                  product.discountPriceIncludingTax != null &&
+                  product.priceIncludingTax != null &&
+                  product.discountPriceIncludingTax > 0 &&
+                  product.discountPriceIncludingTax < product.priceIncludingTax;
+
+                const bestSeller = getCollectionForProduct(
+                  bestSellerCollections,
+                  product.productId,
+                );
+
+                const popular = getCollectionForProduct(
+                  popularCollections,
+                  product.productId,
+                );
+
+                return (
+                  <article
+                    key={product.productId}
+                    className="overflow-hidden rounded-xl border border-border bg-white"
+                  >
+                    <div className="flex gap-3 p-3">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-background-soft">
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={product.name || "Ürün görseli"}
+                            fill
+                            sizes="80px"
+                            className="object-contain p-1"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-center text-[10px] text-text-secondary">
+                            Görsel yok
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words text-sm font-semibold text-text-primary">
+                          {product.name || "—"}
+                        </p>
+
+                        {product.brand && (
+                          <p className="mt-1 truncate text-xs text-text-secondary">
+                            {product.brand}
+                          </p>
+                        )}
+
+                        <p className="mt-1 break-all text-xs text-text-secondary">
+                          SKU: {product.sku || "—"}
+                        </p>
+
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusBadge.className}`}>
+                            {statusBadge.label}
+                          </span>
+
+                          <span className={`text-xs font-medium ${stockStatus.className}`}>
+                            {stockStatus.label} ({product.stockQuantity ?? 0})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 border-t border-border px-3 py-3">
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary">Satış Fiyatı</p>
+
+                        {hasDiscount && (
+                          <p className="mt-1 text-xs text-text-secondary line-through">
+                            {formatPrice(product.priceIncludingTax)}
+                          </p>
+                        )}
+
+                        <p className="mt-1 break-words text-sm font-semibold text-text-primary">
+                          {formatPrice(
+                            hasDiscount
+                              ? product.discountPriceIncludingTax
+                              : product.priceIncludingTax,
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary">KDV</p>
+                        <p className="mt-1 text-sm font-medium text-text-primary">
+                          %{product.taxRate ?? 0}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary">Özellikler</p>
+
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {product.isWeeklyDeal && (
+                            <span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-700">
+                              Fırsat
+                            </span>
+                          )}
+
+                          {product.isHighlight && (
+                            <span className="rounded-full bg-purple-100 px-2 py-1 text-[10px] font-medium text-purple-700">
+                              Öne Çıkan
+                            </span>
+                          )}
+
+                          {!product.isWeeklyDeal && !product.isHighlight && (
+                            <span className="text-xs text-text-secondary">—</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-text-secondary">Koleksiyonlar</p>
+
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {bestSeller && (
+                            <span className="rounded-full bg-orange-100 px-2 py-1 text-[10px] font-medium text-orange-700">
+                              Çok Satanlar #{bestSeller.displayOrder}
+                            </span>
+                          )}
+
+                          {popular && (
+                            <span className="rounded-full bg-purple-100 px-2 py-1 text-[10px] font-medium text-purple-700">
+                              Popüler #{popular.displayOrder}
+                            </span>
+                          )}
+
+                          {!bestSeller && !popular && (
+                            <span className="text-xs text-text-secondary">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 border-t border-border p-3">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(product)}
+                        className="flex min-h-10 items-center justify-center rounded-lg border border-border px-3 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+                      >
+                        Düzenle
+                      </button>
+
+                      {product.isActive ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDeactivateModal(product)}
+                            disabled={isSubmitting || isDeleting}
+                            className="flex min-h-10 items-center justify-center gap-1 rounded-lg border border-orange-200 px-2 text-xs font-medium text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                          >
+                            <X className="h-4 w-4 shrink-0" />
+                            Pasifleştir
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDeleteModal(product)}
+                            disabled={isSubmitting || isDeleting}
+                            className="col-span-2 flex min-h-10 items-center justify-center gap-1 rounded-lg border border-red-200 px-2 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4 shrink-0" />
+                            Kalıcı Sil
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleActivateProduct(product)}
+                          disabled={isSubmitting || isDeleting}
+                          className="flex min-h-10 items-center justify-center gap-1 rounded-lg border border-green-200 px-2 text-xs font-medium text-green-600 hover:bg-green-50 disabled:opacity-50"
+                        >
+                          <Check className="h-4 w-4 shrink-0" />
+                          Aktifleştir
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-border px-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <p className="text-xs text-text-secondary">
                 Sayfa {currentPage} / {totalPages}
               </p>
