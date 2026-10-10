@@ -487,7 +487,7 @@ export default function ProductCollectionList() {
 
     return (
         <div>
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="mb-6 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-text-primary">
                         Vitrin Ürünleri
@@ -502,14 +502,14 @@ export default function ProductCollectionList() {
                 <button
                     type="button"
                     onClick={handleOpenAddModal}
-                    className="flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                    className="flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:w-auto"
                 >
                     <Plus className="h-4 w-4" />
                     Ürün Ekle
                 </button>
             </div>
 
-            <div className="mb-5 flex gap-2 border-b border-border">
+            <div className="mb-5 flex min-w-0 gap-2 overflow-x-auto border-b border-border">
                 <button
                     type="button"
                     onClick={() =>
@@ -558,7 +558,7 @@ export default function ProductCollectionList() {
             )}
 
             <div className="overflow-hidden rounded-xl border border-border bg-white">
-                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                <div className="flex min-w-0 items-center justify-between border-b border-border px-4 py-4 sm:px-5">
                     <div>
                         <p className="text-sm font-semibold text-text-primary">
                             {collectionLabel}
@@ -598,236 +598,376 @@ export default function ProductCollectionList() {
                         </div>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[1050px]">
-                            <thead>
-                                <tr className="border-b border-border bg-background-soft">
-                                    <th className="w-28 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Sıra
-                                    </th>
+                    <>
+                        {/* Mobil ürün kartları */}
+                        <div className="space-y-3 p-3 md:hidden">
+                            {collectionRows.map((collection) => {
+                                const product = productMap.get(getCollectionProductId(collection)) ?? null;
+                                const imageUrl = getProductImage(product);
+                                const stockStatus = getStockStatus(product?.stockQuantity);
+                                const statusBadge = getStatusBadge(product?.isActive);
 
-                                    <th className="w-20 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Görsel
-                                    </th>
+                                const hasDiscount =
+                                    product?.discountPriceIncludingTax !== null &&
+                                    product?.discountPriceIncludingTax !== undefined;
 
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Ürün
-                                    </th>
-
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        SKU
-                                    </th>
-
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Satış Fiyatı
-                                    </th>
-
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Stok
-                                    </th>
-
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Durum
-                                    </th>
-
-                                    <th className="w-28 px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        İşlemler
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {collectionRows.map((collection) => {
-                                    const product =
-                                        productMap.get(
-                                            getCollectionProductId(collection),
-                                        ) ?? null;
-
-                                    const imageUrl =
-                                        getProductImage(product);
-
-                                    const stockStatus =
-                                        getStockStatus(
-                                            product?.stockQuantity,
-                                        );
-
-                                    const statusBadge =
-                                        getStatusBadge(product?.isActive);
-
-                                    const hasDiscount =
-                                        product?.discountPriceIncludingTax !==
-                                        null &&
-                                        product?.discountPriceIncludingTax !==
-                                        undefined;
-
-                                    return (
-                                        <tr
-                                            key={
-                                                collection.productCollectionId
-                                            }
-                                            className="border-b border-border last:border-b-0 hover:bg-background-soft/50"
-                                        >
-                                            <td className="px-5 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        max="50"
-                                                        defaultValue={
-                                                            collection.displayOrder
-                                                        }
-                                                        onBlur={(event) =>
-                                                            handleOrderChange(
-                                                                collection,
-                                                                event.target
-                                                                    .value,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            isOrderSaving
-                                                        }
-                                                        className="h-9 w-20 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary outline-none focus:border-primary disabled:opacity-50"
+                                return (
+                                    <div
+                                        key={collection.productCollectionId}
+                                        className="min-w-0 rounded-xl border border-border p-3"
+                                    >
+                                        <div className="flex min-w-0 gap-3">
+                                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-border bg-background-soft">
+                                                {imageUrl ? (
+                                                    <Image
+                                                        src={imageUrl}
+                                                        alt={product?.name ?? "Ürün görseli"}
+                                                        fill
+                                                        sizes="64px"
+                                                        className="object-contain p-1"
+                                                        unoptimized
                                                     />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center">
+                                                        <span className="text-center text-[10px] text-text-secondary">
+                                                            Görsel yok
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                                    <ChevronDown className="h-4 w-4 text-text-secondary" />
-                                                </div>
-                                            </td>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="break-words text-sm font-semibold text-text-primary">
+                                                    {product?.name ?? "Ürün bulunamadı"}
+                                                </p>
 
-                                            <td className="px-5 py-4">
-                                                <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-border bg-background-soft">
-                                                    {imageUrl ? (
-                                                        <Image
-                                                            src={imageUrl}
-                                                            alt={
-                                                                product?.name ??
-                                                                "Ürün görseli"
-                                                            }
-                                                            fill
-                                                            sizes="56px"
-                                                            className="object-contain p-1"
-                                                            unoptimized
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-full w-full items-center justify-center">
-                                                            <span className="text-[10px] text-text-secondary">
-                                                                Görsel yok
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            <td className="px-5 py-4">
-                                                <div className="max-w-[330px]">
-                                                    <p className="truncate text-sm font-semibold text-text-primary">
-                                                        {product?.name ??
-                                                            "Ürün bulunamadı"}
+                                                {product?.brand && (
+                                                    <p className="mt-1 truncate text-xs text-text-secondary">
+                                                        {product.brand}
                                                     </p>
+                                                )}
 
-                                                    {product?.brand && (
-                                                        <p className="mt-1 truncate text-xs text-text-secondary">
-                                                            {product.brand}
-                                                        </p>
-                                                    )}
+                                                <p className="mt-1 break-all text-xs text-text-secondary">
+                                                    SKU: {product?.sku ?? "—"}
+                                                </p>
+
+                                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge.className}`}
+                                                    >
+                                                        {statusBadge.label}
+                                                    </span>
+
+                                                    <span className={`text-xs font-medium ${stockStatus.className}`}>
+                                                        {stockStatus.label} ({product?.stockQuantity ?? 0})
+                                                    </span>
                                                 </div>
-                                            </td>
+                                            </div>
+                                        </div>
 
-                                            <td className="px-5 py-4">
-                                                <span className="text-sm text-text-secondary">
-                                                    {product?.sku ?? "—"}
-                                                </span>
-                                            </td>
+                                        <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
+                                            <div>
+                                                <p className="text-xs text-text-secondary">
+                                                    Satış Fiyatı
+                                                </p>
 
-                                            <td className="px-5 py-4">
                                                 {hasDiscount ? (
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-text-primary">
-                                                            {formatPrice(
-                                                                product.discountPriceIncludingTax,
-                                                            )}
+                                                    <>
+                                                        <p className="mt-1 text-sm font-semibold text-text-primary">
+                                                            {formatPrice(product.discountPriceIncludingTax)}
                                                         </p>
 
                                                         <p className="mt-0.5 text-xs text-text-secondary line-through">
-                                                            {formatPrice(
-                                                                product.priceIncludingTax,
-                                                            )}
+                                                            {formatPrice(product.priceIncludingTax)}
                                                         </p>
-                                                    </div>
+                                                    </>
                                                 ) : (
-                                                    <p className="text-sm font-semibold text-text-primary">
-                                                        {formatPrice(
-                                                            product?.priceIncludingTax,
-                                                        )}
+                                                    <p className="mt-1 text-sm font-semibold text-text-primary">
+                                                        {formatPrice(product?.priceIncludingTax)}
                                                     </p>
                                                 )}
-                                            </td>
+                                            </div>
 
-                                            <td className="px-5 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-text-primary">
-                                                        {product?.stockQuantity ??
-                                                            0}
-                                                    </span>
+                                            <div>
+                                                <label
+                                                    htmlFor={`collection-order-${collection.productCollectionId}`}
+                                                    className="block text-xs text-text-secondary"
+                                                >
+                                                    Koleksiyon Sırası
+                                                </label>
 
-                                                    <span className="text-xs text-text-secondary">
-                                                        |
-                                                    </span>
+                                                <div className="mt-1 flex items-center gap-1.5">
+                                                    <input
+                                                        id={`collection-order-${collection.productCollectionId}`}
+                                                        type="number"
+                                                        min="1"
+                                                        max="50"
+                                                        defaultValue={collection.displayOrder}
+                                                        onBlur={(event) =>
+                                                            handleOrderChange(collection, event.target.value)
+                                                        }
+                                                        disabled={isOrderSaving}
+                                                        className="h-9 w-full min-w-0 rounded-lg border border-border bg-white px-2 text-sm font-semibold text-text-primary outline-none focus:border-primary disabled:opacity-50"
+                                                    />
 
-                                                    <span
-                                                        className={`text-xs font-medium ${stockStatus.className}`}
-                                                    >
-                                                        {stockStatus.label}
-                                                    </span>
+                                                    <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary" />
                                                 </div>
-                                            </td>
+                                            </div>
+                                        </div>
 
-                                            <td className="px-5 py-4">
-                                                <span
-                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge.className}`}
-                                                >
-                                                    {statusBadge.label}
-                                                </span>
-                                            </td>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteCollection(collection)}
+                                            disabled={
+                                                deletingCollectionId === collection.productCollectionId ||
+                                                isOrderSaving
+                                            }
+                                            className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {deletingCollectionId === collection.productCollectionId ? (
+                                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4" />
+                                            )}
+                                            Vitrinden Çıkar
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
-                                            <td className="px-5 py-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleDeleteCollection(
-                                                            collection,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        deletingCollectionId ===
-                                                        collection.productCollectionId ||
-                                                        isOrderSaving
-                                                    }
-                                                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    {deletingCollectionId ===
-                                                        collection.productCollectionId ? (
-                                                        <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                        {/* Masaüstü tablosu */}
+                        <div className="hidden overflow-x-auto md:block">
+                            <table className="w-full min-w-[1050px]">
+                                <thead>
+                                    <tr className="border-b border-border bg-background-soft">
+                                        <th className="w-28 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Sıra
+                                        </th>
+
+                                        <th className="w-20 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Görsel
+                                        </th>
+
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Ürün
+                                        </th>
+
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            SKU
+                                        </th>
+
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Satış Fiyatı
+                                        </th>
+
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Stok
+                                        </th>
+
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Durum
+                                        </th>
+
+                                        <th className="w-28 px-5 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            İşlemler
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {collectionRows.map((collection) => {
+                                        const product =
+                                            productMap.get(
+                                                getCollectionProductId(collection),
+                                            ) ?? null;
+
+                                        const imageUrl =
+                                            getProductImage(product);
+
+                                        const stockStatus =
+                                            getStockStatus(
+                                                product?.stockQuantity,
+                                            );
+
+                                        const statusBadge =
+                                            getStatusBadge(product?.isActive);
+
+                                        const hasDiscount =
+                                            product?.discountPriceIncludingTax !==
+                                            null &&
+                                            product?.discountPriceIncludingTax !==
+                                            undefined;
+
+                                        return (
+                                            <tr
+                                                key={
+                                                    collection.productCollectionId
+                                                }
+                                                className="border-b border-border last:border-b-0 hover:bg-background-soft/50"
+                                            >
+                                                <td className="px-5 py-4">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="50"
+                                                            defaultValue={
+                                                                collection.displayOrder
+                                                            }
+                                                            onBlur={(event) =>
+                                                                handleOrderChange(
+                                                                    collection,
+                                                                    event.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                isOrderSaving
+                                                            }
+                                                            className="h-9 w-20 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary outline-none focus:border-primary disabled:opacity-50"
+                                                        />
+
+                                                        <ChevronDown className="h-4 w-4 text-text-secondary" />
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-border bg-background-soft">
+                                                        {imageUrl ? (
+                                                            <Image
+                                                                src={imageUrl}
+                                                                alt={
+                                                                    product?.name ??
+                                                                    "Ürün görseli"
+                                                                }
+                                                                fill
+                                                                sizes="56px"
+                                                                className="object-contain p-1"
+                                                                unoptimized
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center">
+                                                                <span className="text-[10px] text-text-secondary">
+                                                                    Görsel yok
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <div className="max-w-[330px]">
+                                                        <p className="truncate text-sm font-semibold text-text-primary">
+                                                            {product?.name ??
+                                                                "Ürün bulunamadı"}
+                                                        </p>
+
+                                                        {product?.brand && (
+                                                            <p className="mt-1 truncate text-xs text-text-secondary">
+                                                                {product.brand}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <span className="text-sm text-text-secondary">
+                                                        {product?.sku ?? "—"}
+                                                    </span>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    {hasDiscount ? (
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-text-primary">
+                                                                {formatPrice(
+                                                                    product.discountPriceIncludingTax,
+                                                                )}
+                                                            </p>
+
+                                                            <p className="mt-0.5 text-xs text-text-secondary line-through">
+                                                                {formatPrice(
+                                                                    product.priceIncludingTax,
+                                                                )}
+                                                            </p>
+                                                        </div>
                                                     ) : (
-                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                        <p className="text-sm font-semibold text-text-primary">
+                                                            {formatPrice(
+                                                                product?.priceIncludingTax,
+                                                            )}
+                                                        </p>
                                                     )}
-                                                    Çıkar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium text-text-primary">
+                                                            {product?.stockQuantity ??
+                                                                0}
+                                                        </span>
+
+                                                        <span className="text-xs text-text-secondary">
+                                                            |
+                                                        </span>
+
+                                                        <span
+                                                            className={`text-xs font-medium ${stockStatus.className}`}
+                                                        >
+                                                            {stockStatus.label}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge.className}`}
+                                                    >
+                                                        {statusBadge.label}
+                                                    </span>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleDeleteCollection(
+                                                                collection,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            deletingCollectionId ===
+                                                            collection.productCollectionId ||
+                                                            isOrderSaving
+                                                        }
+                                                        className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {deletingCollectionId ===
+                                                            collection.productCollectionId ? (
+                                                            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        )}
+                                                        Çıkar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
 
             {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-xl">
-                        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-2 sm:p-4">
+                    <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[90vh]">
+                        <div className="flex min-w-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:px-5">
                             <div>
-                                <h3 className="text-lg font-semibold text-text-primary">
+                                <h3 className="wrap-break-word text-lg font-semibold text-text-primary">
                                     {collectionLabel} - Ürün Ekle
                                 </h3>
 
@@ -846,10 +986,10 @@ export default function ProductCollectionList() {
                             </button>
                         </div>
 
-                        <div className="border-b border-border p-5">
+                        <div className="border-b border-border p-3 sm:p-5">
                             <form
                                 onSubmit={handleProductSearch}
-                                className="flex gap-2"
+                                className="flex min-w-0 gap-2"
                             >
                                 <input
                                     type="text"
@@ -860,13 +1000,13 @@ export default function ProductCollectionList() {
                                         )
                                     }
                                     placeholder="Ürün adı, SKU veya marka ara..."
-                                    className="h-10 flex-1 rounded-lg border border-border bg-white px-3 text-sm text-text-primary outline-none placeholder:text-text-secondary focus:border-primary"
+                                    className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-white px-3 text-sm text-text-primary outline-none placeholder:text-text-secondary focus:border-primary"
                                 />
 
                                 <button
                                     type="submit"
                                     disabled={isLoadingProducts}
-                                    className="h-10 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:px-5"
                                 >
                                     Ara
                                 </button>
@@ -880,7 +1020,7 @@ export default function ProductCollectionList() {
                             </div>
                         )}
 
-                        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-5">
                             {isLoadingProducts ? (
                                 <div className="flex min-h-52 items-center justify-center">
                                     <div className="flex items-center gap-2 text-sm text-text-secondary">
@@ -977,7 +1117,7 @@ export default function ProductCollectionList() {
                                 </div>
                             )}
                             {availableProductsPages > 1 && (
-                                <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                                <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-xs text-text-secondary">
                                         Toplam{" "}
                                         <span className="font-semibold text-text-primary">
@@ -1029,7 +1169,7 @@ export default function ProductCollectionList() {
                             )}
                         </div>
 
-                        <div className="border-t border-border bg-background-soft/50 p-5">
+                        <div className="border-t border-border bg-background-soft/50 p-3 sm:p-5">
                             <div className="mb-4 flex items-end gap-3">
                                 <div className="flex-1">
                                     <label className="mb-1.5 block text-xs font-semibold text-text-secondary">
@@ -1075,12 +1215,12 @@ export default function ProductCollectionList() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                                 <button
                                     type="button"
                                     onClick={handleCloseAddModal}
                                     disabled={isAdding}
-                                    className="h-10 rounded-lg border border-border px-4 text-sm font-medium text-text-primary hover:border-primary hover:text-primary disabled:opacity-50"
+                                    className="h-10 w-full rounded-lg border border-border px-4 text-sm font-medium text-text-primary hover:border-primary hover:text-primary disabled:opacity-50 sm:w-auto"
                                 >
                                     Vazgeç
                                 </button>
@@ -1093,7 +1233,7 @@ export default function ProductCollectionList() {
                                         !selectedOrder ||
                                         isAdding
                                     }
-                                    className="flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                 >
                                     {isAdding && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />

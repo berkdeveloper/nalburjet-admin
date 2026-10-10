@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { getDashboardData } from "@/features/dashboard/services/dashboardService";
+import { RefreshCw } from "lucide-react";
 
 function StatCard({ title, value, description, icon }) {
     return (
-        <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 transition-all duration-100 hover:border-orange-300 hover:shadow-lg">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-5 text-gray-500">
@@ -250,8 +251,9 @@ export default function Dashboard() {
                 <button
                     type="button"
                     onClick={loadDashboard}
-                    className="min-h-10 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
+                    className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-primary/30 sm:w-auto"
                 >
+                    <RefreshCw size={16} />
                     Yenile
                 </button>
             </div>
@@ -297,7 +299,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 transition-all duration-100 hover:border-orange-300 hover:shadow-lg">
                     <div className="mb-3 sm:mb-4">
                         <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
                             Mağaza Özeti
@@ -322,7 +324,7 @@ export default function Dashboard() {
                     </div>
                 </section>
 
-                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 transition-all duration-100 hover:border-orange-300 hover:shadow-lg">
                     <div className="mb-3 sm:mb-4">
                         <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
                             Sistem Özeti

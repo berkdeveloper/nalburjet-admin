@@ -365,7 +365,7 @@ export default function OrderList({ onSelectOrder }) {
                             </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                             <button
                                 type="button"
                                 onClick={() =>
@@ -425,8 +425,8 @@ export default function OrderList({ onSelectOrder }) {
                             )}
                         </div>
 
-                        <div className="flex gap-2">
-                            <div className="relative min-w-44">
+                        <div className="flex w-full gap-2 sm:w-auto">
+                            <div className="relative min-w-0 flex-1 sm:min-w-44">
                                 <select
                                     value={sortBy}
                                     onChange={handleSortChange}
@@ -653,7 +653,7 @@ export default function OrderList({ onSelectOrder }) {
                     )}
 
                     <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             {Object.values(ORDER_LIST_STATUS).map((filter) => {
                                 const isActive = activeFilter === filter;
 
@@ -675,7 +675,7 @@ export default function OrderList({ onSelectOrder }) {
                             })}
                         </div>
 
-                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
                             <span>Sayfa başına</span>
 
                             <div className="relative">
@@ -700,7 +700,7 @@ export default function OrderList({ onSelectOrder }) {
             </div>
 
             <div className="border-b border-border bg-background-soft/50 px-4 py-3 sm:px-6">
-                <div className="grid gap-3 text-center sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
                     <div>
                         <p className="text-xs font-medium text-text-secondary">
                             Toplam Sipariş
@@ -787,136 +787,212 @@ export default function OrderList({ onSelectOrder }) {
                         )}
                     </div>
                 ) : (
-                    <div className="overflow-x-auto rounded-xl border border-border">
-                        <table className="min-w-[1180px] w-full">
-                            <thead>
-                                <tr className="border-b border-border bg-background-soft/60 text-center">
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Sipariş
-                                    </th>
-                                    <th className="px-12 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Müşteri
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Sipariş Durumu
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Ödeme
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Teslimat
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Toplam
-                                    </th>
-                                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-text-secondary">
-                                        Sipariş Tarihi
-                                    </th>
-                                    <th className="w-28 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        İşlem
-                                    </th>
-                                </tr>
-                            </thead>
+                    <>
+                        {/* Mobil görünüm: dikey sipariş kartları */}
+                        <div className="space-y-3 md:hidden">
+                            {orders.map((order) => (
+                                <article
+                                    key={order.orderId}
+                                    className="overflow-hidden rounded-xl border border-border bg-white"
+                                >
+                                    <div className="flex items-start justify-between gap-3 border-b border-border bg-background-soft/40 p-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelectOrder(order)}
+                                            className="min-w-0 text-left"
+                                        >
+                                            <p className="break-words text-sm font-bold text-primary">
+                                                {order.orderNumber}
+                                            </p>
 
-                            <tbody>
-                                {orders.map((order) => (
-                                    <tr
-                                        key={order.orderId}
-                                        className="border-b border-border last:border-b-0 transition-colors hover:bg-background-soft"
-                                    >
-                                        <td className="px-4 py-4">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    onSelectOrder(order)
-                                                }
-                                                className="text-center"
-                                            >
-                                                <p className="font-bold text-primary hover:underline">
-                                                    {order.orderNumber}
-                                                </p>
+                                            <p className="mt-1 text-xs text-text-secondary">
+                                                {order.items?.length ?? 0} ürün
+                                                {order.orderNotes ? " · Not var" : ""}
+                                            </p>
+                                        </button>
 
-                                                <div className="mt-1 flex items-center gap-2 text-xs text-text-secondary">
-                                                    <span>
-                                                        {order.items?.length ??
-                                                            0}{" "}
-                                                        ürün
-                                                    </span>
+                                        <span className="shrink-0 text-right text-sm font-bold text-text-primary">
+                                            {formatPrice(order.grandTotal)}
+                                        </span>
+                                    </div>
 
-                                                    {order.orderNotes && (
-                                                        <>
-                                                            <span>•</span>
-                                                            <span>Not var</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </button>
-                                        </td>
-
-                                        <td className="px-4 py-4">
-                                            <p className="font-medium text-text-primary">
+                                    <div className="space-y-3 p-3">
+                                        <div className="min-w-0">
+                                            <p className="text-xs text-text-secondary">
+                                                Müşteri
+                                            </p>
+                                            <p className="mt-1 break-words text-sm font-medium text-text-primary">
                                                 {getCustomerName(order)}
                                             </p>
-
-                                            <p className="mt-1 max-w-56 truncate text-xs text-text-secondary">
-                                                {order.shippingAddress
-                                                    ?.email || "E-posta yok"}
+                                            <p className="mt-1 break-all text-xs text-text-secondary">
+                                                {order.shippingAddress?.email || "E-posta yok"}
                                             </p>
-                                        </td>
+                                        </div>
 
-                                        <td className="px-4 py-4 text-center">
-                                            <OrderStatusBadge
-                                                status={order.orderStatus}
-                                            />
-                                        </td>
+                                        <div className="grid grid-cols-1 gap-3 border-t border-border pt-3">
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="text-xs text-text-secondary">
+                                                    Sipariş durumu
+                                                </span>
+                                                <OrderStatusBadge status={order.orderStatus} />
+                                            </div>
 
-                                        <td className="px-4 py-4 text-center">
-                                            <PaymentStatusBadge
-                                                status={order.paymentStatus}
-                                            />
-                                        </td>
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="text-xs text-text-secondary">
+                                                    Ödeme
+                                                </span>
+                                                <PaymentStatusBadge status={order.paymentStatus} />
+                                            </div>
 
-                                        <td className="px-4 py-4 text-center">
-                                            <DeliveryStatusBadge
-                                                status={order.deliveryStatus}
-                                            />
-                                        </td>
+                                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <span className="text-xs text-text-secondary">
+                                                    Teslimat
+                                                </span>
+                                                <DeliveryStatusBadge status={order.deliveryStatus} />
+                                            </div>
+                                        </div>
 
-                                        <td className="px-4 py-4 text-center">
-                                            <span className="font-bold text-text-primary">
-                                                {formatPrice(
-                                                    order.grandTotal,
-                                                )}
-                                            </span>
-                                        </td>
+                                        <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="text-xs text-text-secondary">
+                                                    Sipariş tarihi
+                                                </p>
+                                                <p className="mt-1 text-sm text-text-primary">
+                                                    {formatOrderDate(order.audit?.createdDate)}
+                                                </p>
+                                            </div>
 
-                                        <td className="whitespace-nowrap px-4 py-4 text-sm text-text-primary text-center">
-                                            {formatOrderDate(order.audit?.createdDate)}
-                                        </td>
-
-                                        <td className="px-4 py-4 text-center">
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    onSelectOrder(order)
-                                                }
-                                                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary transition-colors hover:border-primary hover:text-primary"
+                                                onClick={() => onSelectOrder(order)}
+                                                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary transition-colors hover:border-primary hover:text-primary sm:w-auto"
                                             >
                                                 <Eye className="h-4 w-4" />
-                                                Detay
+                                                Detayları Gör
                                             </button>
-                                        </td>
+                                        </div>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+
+                        {/* Masaüstü görünüm: mevcut tablo */}
+                        <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
+                            <table className="min-w-[1180px] w-full">
+                                <thead>
+                                    <tr className="border-b border-border bg-background-soft/60 text-center">
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Sipariş
+                                        </th>
+                                        <th className="px-12 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Müşteri
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Sipariş Durumu
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Ödeme
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Teslimat
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Toplam
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-text-secondary">
+                                            Sipariş Tarihi
+                                        </th>
+                                        <th className="w-28 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            İşlem
+                                        </th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+
+                                <tbody>
+                                    {orders.map((order) => (
+                                        <tr
+                                            key={order.orderId}
+                                            className="border-b border-border last:border-b-0 transition-colors hover:bg-background-soft"
+                                        >
+                                            <td className="px-4 py-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelectOrder(order)}
+                                                    className="text-center"
+                                                >
+                                                    <p className="font-bold text-primary hover:underline">
+                                                        {order.orderNumber}
+                                                    </p>
+
+                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                                                        <span>
+                                                            {order.items?.length ?? 0} ürün
+                                                        </span>
+
+                                                        {order.orderNotes && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <span>Not var</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            </td>
+
+                                            <td className="px-4 py-4">
+                                                <p className="font-medium text-text-primary">
+                                                    {getCustomerName(order)}
+                                                </p>
+
+                                                <p className="mt-1 max-w-56 truncate text-xs text-text-secondary">
+                                                    {order.shippingAddress?.email || "E-posta yok"}
+                                                </p>
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                <OrderStatusBadge status={order.orderStatus} />
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                <PaymentStatusBadge status={order.paymentStatus} />
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                <DeliveryStatusBadge status={order.deliveryStatus} />
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                <span className="font-bold text-text-primary">
+                                                    {formatPrice(order.grandTotal)}
+                                                </span>
+                                            </td>
+
+                                            <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-text-primary">
+                                                {formatOrderDate(order.audit?.createdDate)}
+                                            </td>
+
+                                            <td className="px-4 py-4 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelectOrder(order)}
+                                                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-primary transition-colors hover:border-primary hover:text-primary"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    Detay
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
 
             {!error && pagination.pages > 0 && (
                 <div className="flex flex-col gap-3 border-t border-border bg-background-soft/30 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="text-sm text-text-secondary">
+                    <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm text-text-secondary">
                         <span className="font-medium text-text-primary">
                             {pagination.index + 1}.
                         </span>{" "}
@@ -925,7 +1001,7 @@ export default function OrderList({ onSelectOrder }) {
                         {pagination.count} sipariş
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             onClick={handlePreviousPage}

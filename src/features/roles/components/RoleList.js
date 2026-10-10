@@ -280,9 +280,9 @@ export default function RoleList() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+        <div className="min-w-0 space-y-4 sm:space-y-6">
+            <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                     <h1 className="text-2xl font-semibold text-gray-900">Roller</h1>
                     <p className="mt-1 text-sm text-gray-500">
                         Sistem rollerini yönetin.
@@ -292,7 +292,7 @@ export default function RoleList() {
                 <button
                     type="button"
                     onClick={handleOpenCreateModal}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#EE7402] px-4 text-sm font-medium text-white transition hover:bg-[#d96700]"
+                    className="inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[#EE7402] px-4 text-sm font-medium text-white transition hover:bg-[#d96700] sm:w-auto"
                 >
                     <Plus className="h-4 w-4" />
                     Yeni Rol
@@ -301,10 +301,10 @@ export default function RoleList() {
 
             <form
                 onSubmit={handleSearch}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
             >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-                    <div className="flex-1">
+                <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-end">
+                    <div className="min-w-0 flex-1">
                         <label
                             htmlFor="roleName"
                             className="mb-1.5 block text-sm font-medium text-gray-700"
@@ -322,10 +322,10 @@ export default function RoleList() {
                         />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex w-full gap-2 lg:w-auto">
                         <button
                             type="submit"
-                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white transition hover:bg-gray-800"
+                            className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 text-sm font-medium text-white transition hover:bg-gray-800 lg:flex-none lg:px-4"
                         >
                             <Search className="h-4 w-4" />
                             Ara
@@ -334,7 +334,7 @@ export default function RoleList() {
                         <button
                             type="button"
                             onClick={handleClearFilters}
-                            className="h-10 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 lg:flex-none lg:px-4"
                         >
                             Temizle
                         </button>
@@ -348,8 +348,73 @@ export default function RoleList() {
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="overflow-x-auto">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                {/* Mobil görünüm */}
+                <div className="space-y-3 p-3 md:hidden">
+                    {isLoading ? (
+                        <div className="flex justify-center py-10">
+                            <LoaderCircle className="h-6 w-6 animate-spin text-[#EE7402]" />
+                        </div>
+                    ) : roles.length === 0 ? (
+                        <div className="py-8 text-center">
+                            <p className="text-sm text-gray-500">
+                                Kayıtlı rol bulunamadı.
+                            </p>
+                        </div>
+                    ) : (
+                        roles.map((role) => (
+                            <div
+                                key={role.roleId}
+                                className="min-w-0 rounded-lg border border-gray-200 bg-white p-4"
+                            >
+                                <h3 className="break-words text-base font-semibold text-gray-900">
+                                    {role.roleName}
+                                </h3>
+
+                                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-5 text-gray-600">
+                                    {role.description || "-"}
+                                </p>
+
+                                <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenRole(role.roleId, false)}
+                                        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg border border-gray-300 px-1.5 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                                    >
+                                        <Eye className="h-4 w-4 shrink-0" />
+                                        <span>Görüntüle</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenRole(role.roleId, true)}
+                                        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg border border-gray-300 px-1.5 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                                    >
+                                        <Pencil className="h-4 w-4 shrink-0" />
+                                        <span>Düzenle</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenDeleteModal(role)}
+                                        disabled={deletingRoleId === role.roleId}
+                                        className="inline-flex min-w-0 items-center justify-center gap-1 rounded-lg border border-red-200 px-1.5 py-2 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {deletingRoleId === role.roleId ? (
+                                            <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4 shrink-0" />
+                                        )}
+                                        <span>Sil</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Masaüstü tablosu */}
+                <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-full">
                         <thead className="border-b border-gray-200 bg-gray-50">
                             <tr>
@@ -400,9 +465,7 @@ export default function RoleList() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        handleOpenRole(role.roleId, false)
-                                                    }
+                                                    onClick={() => handleOpenRole(role.roleId, false)}
                                                     className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                                                 >
                                                     <Eye className="h-4 w-4" />
@@ -411,9 +474,7 @@ export default function RoleList() {
 
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        handleOpenRole(role.roleId, true)
-                                                    }
+                                                    onClick={() => handleOpenRole(role.roleId, true)}
                                                     className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                                                 >
                                                     <Pencil className="h-4 w-4" />
@@ -442,7 +503,8 @@ export default function RoleList() {
                     </table>
                 </div>
 
-                <div className="flex flex-col gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Sayfalama */}
+                <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
                     <p className="text-sm text-gray-500">
                         Toplam{" "}
                         <span className="font-medium text-gray-700">
@@ -451,7 +513,7 @@ export default function RoleList() {
                         rol
                     </p>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <button
                             type="button"
                             onClick={() => setPageIndex((current) => current - 1)}
@@ -480,11 +542,12 @@ export default function RoleList() {
                 </div>
             </div>
 
+            {/* Rol oluşturma / görüntüleme / düzenleme modalı */}
             {isRoleModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-                        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
-                            <div>
+                <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:items-center sm:p-4">
+                    <div className="my-auto w-full max-w-lg rounded-2xl bg-white shadow-xl">
+                        <div className="flex min-w-0 items-start justify-between gap-3 border-b border-gray-100 px-4 py-5 sm:px-6">
+                            <div className="min-w-0">
                                 <h2 className="text-lg font-semibold text-gray-900">
                                     {selectedRole
                                         ? isRoleEditing
@@ -506,19 +569,19 @@ export default function RoleList() {
                                 type="button"
                                 onClick={resetRoleModal}
                                 disabled={isSaving}
-                                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
                         {isLoadingRole ? (
-                            <div className="px-6 py-12 text-center">
+                            <div className="px-4 py-12 text-center sm:px-6">
                                 <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-[#EE7402]" />
                             </div>
                         ) : (
                             <form onSubmit={handleSaveRole}>
-                                <div className="space-y-5 px-6 py-6">
+                                <div className="space-y-5 px-4 py-5 sm:px-6 sm:py-6">
                                     {formError && (
                                         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                             {formError}
@@ -569,20 +632,20 @@ export default function RoleList() {
                                                 Rol ID
                                             </label>
 
-                                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs text-gray-500">
+                                            <div className="break-all rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-xs text-gray-500">
                                                 {selectedRole.roleId}
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                                <div className="flex flex-col-reverse gap-2 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6">
                                     {selectedRole && !isRoleEditing ? (
                                         <>
                                             <button
                                                 type="button"
                                                 onClick={resetRoleModal}
-                                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
                                             >
                                                 Kapat
                                             </button>
@@ -590,7 +653,7 @@ export default function RoleList() {
                                             <button
                                                 type="button"
                                                 onClick={() => setIsRoleEditing(true)}
-                                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#EE7402] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#d96700]"
+                                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#EE7402] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#d96700] sm:w-auto"
                                             >
                                                 <Pencil className="h-4 w-4" />
                                                 Düzenle
@@ -600,13 +663,9 @@ export default function RoleList() {
                                         <>
                                             <button
                                                 type="button"
-                                                onClick={
-                                                    selectedRole
-                                                        ? handleCancelEditing
-                                                        : resetRoleModal
-                                                }
+                                                onClick={selectedRole ? handleCancelEditing : resetRoleModal}
                                                 disabled={isSaving}
-                                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                             >
                                                 Vazgeç
                                             </button>
@@ -614,7 +673,7 @@ export default function RoleList() {
                                             <button
                                                 type="submit"
                                                 disabled={isSaving}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-[#EE7402] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#d96700] disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#EE7402] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#d96700] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                             >
                                                 {isSaving && (
                                                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -630,10 +689,11 @@ export default function RoleList() {
                 </div>
             )}
 
+            {/* Rol silme modalı */}
             {deleteModalRole && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-                        <div className="border-b border-gray-100 px-6 py-5">
+                <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/40 p-2 sm:items-center sm:p-4">
+                    <div className="my-auto w-full max-w-md rounded-2xl bg-white shadow-xl">
+                        <div className="border-b border-gray-100 px-4 py-5 sm:px-6">
                             <h2 className="text-lg font-semibold text-gray-900">
                                 Rolü Sil
                             </h2>
@@ -642,23 +702,21 @@ export default function RoleList() {
                             </p>
                         </div>
 
-                        <div className="px-6 py-5">
+                        <div className="px-4 py-5 sm:px-6">
                             <p className="text-sm leading-6 text-gray-700">
-                                <span className="font-semibold text-gray-900">
+                                <span className="break-words font-semibold text-gray-900">
                                     {deleteModalRole.roleName}
                                 </span>{" "}
                                 rolünü silmek istediğinize emin misiniz?
                             </p>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                        <div className="flex flex-col-reverse gap-2 border-t border-gray-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6">
                             <button
                                 type="button"
                                 onClick={() => setDeleteModalRole(null)}
-                                disabled={
-                                    deletingRoleId === deleteModalRole.roleId
-                                }
-                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={deletingRoleId === deleteModalRole.roleId}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
                                 Vazgeç
                             </button>
@@ -666,10 +724,8 @@ export default function RoleList() {
                             <button
                                 type="button"
                                 onClick={handleDeleteRole}
-                                disabled={
-                                    deletingRoleId === deleteModalRole.roleId
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={deletingRoleId === deleteModalRole.roleId}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
                                 {deletingRoleId === deleteModalRole.roleId && (
                                     <LoaderCircle className="h-4 w-4 animate-spin" />

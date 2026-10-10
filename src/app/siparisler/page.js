@@ -113,8 +113,8 @@ export default function OrdersPage() {
 
     return (
         <AdminLayout>
-            <main className="space-y-6">
-                <div>
+            <main className="min-w-0 space-y-4 sm:space-y-6">
+                <div className="min-w-0">
                     <h1 className="text-2xl font-bold text-text-primary">
                         Siparişler
                     </h1>
@@ -124,10 +124,12 @@ export default function OrdersPage() {
                     </p>
                 </div>
 
-                <OrderList
-                    key={orderListKey}
-                    onSelectOrder={setSelectedOrder}
-                />
+                <div className="min-w-0">
+                    <OrderList
+                        key={orderListKey}
+                        onSelectOrder={setSelectedOrder}
+                    />
+                </div>
 
                 {selectedOrder && (
                     <OrderDetailModal

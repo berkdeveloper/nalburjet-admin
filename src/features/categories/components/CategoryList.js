@@ -509,7 +509,7 @@ export default function CategoryList() {
 
     return (
         <div>
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="mb-6 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-text-primary">Kategoriler</h2>
 
@@ -521,7 +521,7 @@ export default function CategoryList() {
                 <button
                     type="button"
                     onClick={handleOpenCreateModal}
-                    className="flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+                    className="flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover sm:w-auto"
                 >
                     <Plus className="h-4 w-4" />
                     Yeni Kategori
@@ -531,7 +531,7 @@ export default function CategoryList() {
             <div className="mb-5 rounded-xl border border-border bg-white p-4">
                 <form
                     onSubmit={handleSearchSubmit}
-                    className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_200px_auto]"
+                    className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_200px_auto]"
                 >
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
@@ -567,7 +567,7 @@ export default function CategoryList() {
                 </form>
 
                 {hasFilters && (
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
                         <p className="text-xs text-text-secondary">
                             Filtreler uygulanıyor.
                         </p>
@@ -585,7 +585,7 @@ export default function CategoryList() {
             </div>
 
             <div className="overflow-hidden rounded-xl border border-border bg-white">
-                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-4 sm:px-5">
                     <div>
                         <p className="text-sm font-semibold text-text-primary">
                             Kategori Listesi
@@ -627,160 +627,273 @@ export default function CategoryList() {
                         </div>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[900px]">
-                            <thead>
-                                <tr className="border-b border-border bg-background-soft">
-                                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Kategori
-                                    </th>
+                    <>
+                        {/* Mobil: dikey kaydırılabilen kategori kartları */}
+                        <div className="space-y-3 p-3 md:hidden">
+                            {categoryTree.map(({ category, level }) => {
+                                const statusBadge = getStatusBadge(category.isActive);
+                                const levelBadge = getLevelBadge(level);
 
-                                    <th className="w-32 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Seviye
-                                    </th>
-
-                                    <th className="w-32 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Durum
-                                    </th>
-
-                                    <th className="w-48 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        Slug
-                                    </th>
-
-                                    <th className="w-36 px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                                        İşlemler
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {categoryTree.map(({ category, level }) => {
-                                    const statusBadge = getStatusBadge(category.isActive);
-
-                                    return (
-                                        <tr
-                                            key={category.categoryId}
-                                            className="border-b border-border transition-colors hover:bg-background-soft"
-                                        >
-                                            <td className="px-5 py-4">
-                                                <div
-                                                    className="flex items-center"
-                                                    style={{
-                                                        paddingLeft: `${level * 28}px`,
-                                                    }}
-                                                >
-                                                    {level > 0 && (
-                                                        <span className="mr-2 text-sm text-border">└</span>
-                                                    )}
-
+                                return (
+                                    <article
+                                        key={category.categoryId}
+                                        className="overflow-hidden rounded-xl border border-border bg-white"
+                                    >
+                                        <div className="flex min-w-0 items-start gap-2 p-3">
+                                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                                                <div className="mt-0.5 flex shrink-0 items-center text-text-secondary">
                                                     {level === 0 ? (
-                                                        <ChevronDown className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
+                                                        <ChevronDown className="h-4 w-4" />
                                                     ) : (
-                                                        <ChevronRight className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
+                                                        <ChevronRight className="h-4 w-4" />
                                                     )}
-
-                                                    <div className="min-w-0">
-                                                        <p className="truncate text-sm font-semibold text-text-primary">
-                                                            {category.name}
-                                                        </p>
-
-                                                        {category.description && (
-                                                            <p className="mt-0.5 max-w-[500px] truncate text-xs text-text-secondary">
-                                                                {category.description}
-                                                            </p>
-                                                        )}
-                                                    </div>
                                                 </div>
-                                            </td>
 
-                                            <td className="px-3 py-4">
-                                                {(() => {
-                                                    const levelBadge = getLevelBadge(level);
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="break-words text-sm font-semibold text-text-primary">
+                                                        {category.name}
+                                                    </p>
 
-                                                    return (
-                                                        <span
-                                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${levelBadge.className}`}
-                                                        >
-                                                            {levelBadge.label}
-                                                        </span>
-                                                    );
-                                                })()}
-                                            </td>
+                                                    {category.description && (
+                                                        <p className="mt-1 break-words text-xs leading-5 text-text-secondary">
+                                                            {category.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                            <td className="px-5 py-4">
+                                            <span
+                                                className={`inline-flex shrink-0 rounded-full px-2 py-1 text-xs font-medium ${statusBadge.className}`}
+                                            >
+                                                {statusBadge.label}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-3 border-t border-border bg-background-soft/30 p-3">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 <span
-                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge.className}`}
+                                                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${levelBadge.className}`}
                                                 >
-                                                    {statusBadge.label}
+                                                    {levelBadge.label}
                                                 </span>
-                                            </td>
 
-                                            <td className="px-2 py-4 min-w-56">
-                                                <span className="text-sm text-text-secondary">
+                                                <span className="break-all text-xs text-text-secondary">
                                                     {category.slug || "—"}
                                                 </span>
-                                            </td>
+                                            </div>
 
-                                            <td className="px-5 py-4">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEditModal(category)}
-                                                        className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-text-primary transition-colors hover:border-primary hover:text-primary"
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                        Düzenle
-                                                    </button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleOpenEditModal(category)}
+                                                    className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-white px-2 py-2 text-xs font-medium text-text-primary transition-colors hover:border-primary hover:text-primary"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5 shrink-0" />
+                                                    Düzenle
+                                                </button>
 
-                                                    {category.isActive ? (
-                                                        <>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleOpenDeactivateModal(category)
-                                                                }
-                                                                disabled={isSubmitting}
-                                                                className="flex h-8 gap-1.5 w-32 text-xs font-medium items-center justify-center rounded-lg border border-orange-200 px-2.5 text-orange-600 transition-colors hover:bg-orange-50 hover:border-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
-                                                                title="Pasifleştir"
-                                                                aria-label={`${category.name} kategorisini pasifleştir`}
-                                                            >
-                                                                <X className="h-3.5 w-3.5" />
-                                                                Pasifleştir
-                                                            </button>
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleOpenDeleteModal(category)}
-                                                                disabled={isSubmitting}
-                                                                className="flex h-8 gap-1.5 w-32 text-xs font-medium items-center justify-center rounded-lg border border-red-200 px-2.5 text-red-600 transition-colors hover:bg-red-50 hover:border-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                                                                title="Kalıcı Sil"
-                                                                aria-label={`${category.name} kategorisini kalıcı olarak sil`}
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                                Kalıcı Sil
-                                                            </button>
-                                                        </>
-                                                    ) : (
+                                                {category.isActive ? (
+                                                    <>
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleActivateCategory(category)}
+                                                            onClick={() => handleOpenDeactivateModal(category)}
                                                             disabled={isSubmitting}
-                                                            className="flex h-8 gap-1.5 w-32 text-xs font-medium items-center justify-center rounded-lg border border-green-200 px-2.5 text-green-600 transition-colors hover:bg-green-50 hover:border-green-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                                            title="Aktifleştir"
-                                                            aria-label={`${category.name} kategorisini aktifleştir`}
+                                                            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-orange-200 bg-white px-2 py-2 text-xs font-medium text-orange-600 transition-colors hover:border-orange-500 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            title="Pasifleştir"
+                                                            aria-label={`${category.name} kategorisini pasifleştir`}
                                                         >
-                                                            <Check className="h-3.5 w-3.5" />
-                                                            Aktifleştir
+                                                            <X className="h-3.5 w-3.5 shrink-0" />
+                                                            Pasifleştir
                                                         </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenDeleteModal(category)}
+                                                            disabled={isSubmitting}
+                                                            className="col-span-2 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            title="Kalıcı Sil"
+                                                            aria-label={`${category.name} kategorisini kalıcı olarak sil`}
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                                                            Kalıcı Sil
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleActivateCategory(category)}
+                                                        disabled={isSubmitting}
+                                                        className="col-span-1 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-2 py-2 text-xs font-medium text-green-600 transition-colors hover:border-green-400 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        title="Aktifleştir"
+                                                        aria-label={`${category.name} kategorisini aktifleştir`}
+                                                    >
+                                                        <Check className="h-3.5 w-3.5 shrink-0" />
+                                                        Aktifleştir
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+
+                        {/* Masaüstü: mevcut tablo */}
+                        <div className="hidden overflow-x-auto md:block">
+                            <table className="w-full min-w-[900px]">
+                                <thead>
+                                    <tr className="border-b border-border bg-background-soft">
+                                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Kategori
+                                        </th>
+
+                                        <th className="w-32 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Seviye
+                                        </th>
+
+                                        <th className="w-32 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Durum
+                                        </th>
+
+                                        <th className="w-48 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            Slug
+                                        </th>
+
+                                        <th className="w-36 px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                                            İşlemler
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {categoryTree.map(({ category, level }) => {
+                                        const statusBadge = getStatusBadge(category.isActive);
+
+                                        return (
+                                            <tr
+                                                key={category.categoryId}
+                                                className="border-b border-border transition-colors hover:bg-background-soft"
+                                            >
+                                                <td className="px-5 py-4">
+                                                    <div
+                                                        className="flex items-center"
+                                                        style={{
+                                                            paddingLeft: `${level * 28}px`,
+                                                        }}
+                                                    >
+                                                        {level > 0 && (
+                                                            <span className="mr-2 text-sm text-border">
+                                                                └
+                                                            </span>
+                                                        )}
+
+                                                        {level === 0 ? (
+                                                            <ChevronDown className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
+                                                        ) : (
+                                                            <ChevronRight className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
+                                                        )}
+
+                                                        <div className="min-w-0">
+                                                            <p className="truncate text-sm font-semibold text-text-primary">
+                                                                {category.name}
+                                                            </p>
+
+                                                            {category.description && (
+                                                                <p className="mt-0.5 max-w-[500px] truncate text-xs text-text-secondary">
+                                                                    {category.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-3 py-4">
+                                                    {(() => {
+                                                        const levelBadge = getLevelBadge(level);
+
+                                                        return (
+                                                            <span
+                                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${levelBadge.className}`}
+                                                            >
+                                                                {levelBadge.label}
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadge.className}`}
+                                                    >
+                                                        {statusBadge.label}
+                                                    </span>
+                                                </td>
+
+                                                <td className="min-w-56 px-2 py-4">
+                                                    <span className="text-sm text-text-secondary">
+                                                        {category.slug || "—"}
+                                                    </span>
+                                                </td>
+
+                                                <td className="px-5 py-4">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenEditModal(category)}
+                                                            className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-text-primary transition-colors hover:border-primary hover:text-primary"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                            Düzenle
+                                                        </button>
+
+                                                        {category.isActive ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenDeactivateModal(category)}
+                                                                    disabled={isSubmitting}
+                                                                    className="flex h-8 w-32 items-center justify-center gap-1.5 rounded-lg border border-orange-200 px-2.5 text-xs font-medium text-orange-600 transition-colors hover:border-orange-500 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    title="Pasifleştir"
+                                                                    aria-label={`${category.name} kategorisini pasifleştir`}
+                                                                >
+                                                                    <X className="h-3.5 w-3.5" />
+                                                                    Pasifleştir
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenDeleteModal(category)}
+                                                                    disabled={isSubmitting}
+                                                                    className="flex h-8 w-32 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-2.5 text-xs font-medium text-red-600 transition-colors hover:border-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    title="Kalıcı Sil"
+                                                                    aria-label={`${category.name} kategorisini kalıcı olarak sil`}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                    Kalıcı Sil
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleActivateCategory(category)}
+                                                                disabled={isSubmitting}
+                                                                className="flex h-8 w-32 items-center justify-center gap-1.5 rounded-lg border border-green-200 px-2.5 text-xs font-medium text-green-600 transition-colors hover:border-green-400 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                title="Aktifleştir"
+                                                                aria-label={`${category.name} kategorisini aktifleştir`}
+                                                            >
+                                                                <Check className="h-3.5 w-3.5" />
+                                                                Aktifleştir
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
 

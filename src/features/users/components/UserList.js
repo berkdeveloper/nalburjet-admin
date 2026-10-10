@@ -346,7 +346,7 @@ export default function UserList() {
     }
 
     return (
-        <section className="space-y-6">
+        <section className="min-w-0 space-y-4 sm:space-y-6">
             <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
                     Kullanıcılar
@@ -358,9 +358,9 @@ export default function UserList() {
 
             <form
                 onSubmit={handleSearch}
-                className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+                className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5"
             >
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
                     <div>
                         <h2 className="text-base font-semibold text-gray-900">
                             Filtrele
@@ -371,7 +371,7 @@ export default function UserList() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                     <div>
                         <label
                             htmlFor="firstName"
@@ -470,11 +470,11 @@ export default function UserList() {
                     </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
                     <button
                         type="button"
                         onClick={handleClearFilters}
-                        className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
                     >
                         <XCircle className="h-4 w-4" />
                         Temizle
@@ -482,7 +482,7 @@ export default function UserList() {
 
                     <button
                         type="submit"
-                        className="inline-flex h-10 items-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-medium text-white transition hover:bg-orange-600"
+                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-medium text-white transition hover:bg-orange-600 sm:w-auto"
                     >
                         <Search className="h-4 w-4" />
                         Ara
@@ -497,7 +497,7 @@ export default function UserList() {
             )}
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                <div className="flex min-w-0 items-center justify-between border-b border-gray-200 px-4 py-4 sm:px-5">
                     <div>
                         <h2 className="font-semibold text-gray-900">
                             Kullanıcı Listesi
@@ -508,7 +508,137 @@ export default function UserList() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Mobil kullanıcı kartları */}
+                <div className="space-y-3 p-3 md:hidden">
+                    {isLoading ? (
+                        <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-gray-500">
+                            <LoaderCircle className="h-5 w-5 animate-spin" />
+                            Kullanıcılar yükleniyor...
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="flex flex-col items-center px-4 py-10 text-center">
+                            <CircleUserRound className="h-10 w-10 text-gray-300" />
+                            <p className="mt-3 text-sm font-medium text-gray-700">
+                                Kullanıcı bulunamadı.
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Filtrelerinizi değiştirerek tekrar deneyebilirsiniz.
+                            </p>
+                        </div>
+                    ) : (
+                        users.map((user) => (
+                            <div
+                                key={user.userId}
+                                className="min-w-0 rounded-xl border border-gray-200 p-3"
+                            >
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+                                        <CircleUserRound className="h-5 w-5" />
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        <p className="break-words text-sm font-semibold text-gray-900">
+                                            {getFullName(user)}
+                                        </p>
+                                        <p className="mt-1 break-all text-xs text-gray-400">
+                                            {user.userId}
+                                        </p>
+                                    </div>
+
+                                    <span
+                                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${getRoleName(user, roles) === "Admin"
+                                                ? "bg-blue-100 text-blue-700"
+                                                : "bg-orange-100 text-orange-700"
+                                            }`}
+                                    >
+                                        {getRoleName(user, roles)}
+                                    </span>
+                                </div>
+
+                                <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                                    <div>
+                                        <p className="text-xs text-gray-500">E-posta</p>
+                                        <p className="mt-0.5 break-all text-sm text-gray-700">
+                                            {user.email || "-"}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs text-gray-500">Telefon</p>
+                                        <p className="mt-0.5 break-words text-sm text-gray-700">
+                                            {user.phoneNumber || "-"}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                        {user.emailConfirmed ? (
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-600">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                E-posta doğrulandı
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
+                                                <XCircle className="h-4 w-4" />
+                                                E-posta doğrulanmadı
+                                            </span>
+                                        )}
+
+                                        {user.isActive ? (
+                                            <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                                Aktif
+                                            </span>
+                                        ) : (
+                                            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                                                Pasif
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p className="text-xs text-gray-500">
+                                        Kayıt Tarihi: {formatDate(user.audit?.createdDate)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenUser(user.userId, false)}
+                                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                        Görüntüle
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenUser(user.userId, true)}
+                                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                        Düzenle
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenDeleteModal(user)}
+                                        disabled={deletingUserId === user.userId}
+                                        className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1"
+                                    >
+                                        {deletingUserId === user.userId ? (
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4" />
+                                        )}
+                                        Sil
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Masaüstü kullanıcı tablosu */}
+                <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-full">
                         <thead>
                             <tr className="border-b border-gray-200 bg-gray-50">
@@ -684,12 +814,12 @@ export default function UserList() {
                 </div>
 
                 {!isLoading && users.length > 0 && (
-                    <div className="flex items-center justify-between border-t border-gray-200 px-5 py-4">
-                        <p className="text-sm text-gray-500">
+                    <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <p className="text-center text-sm text-gray-500 sm:text-left">
                             Sayfa {pages === 0 ? 0 : pageIndex + 1} / {pages}
                         </p>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2 sm:justify-end">
                             <button
                                 type="button"
                                 onClick={handlePreviousPage}
@@ -716,9 +846,9 @@ export default function UserList() {
                 )}
             </div>
             {isDetailModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl">
-                        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-2 sm:p-4">
+                    <div className="my-auto max-h-[calc(100dvh-1rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-xl sm:max-h-[90vh]">
+                        <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6">
                             <div>
                                 <h2 className="text-lg font-semibold text-gray-900">
                                     Kullanıcı Detayı
@@ -738,7 +868,7 @@ export default function UserList() {
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-4 sm:p-6">
                             {isLoadingUser ? (
                                 <div className="flex min-h-60 items-center justify-center">
                                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -754,7 +884,7 @@ export default function UserList() {
                                         </div>
                                     )}
 
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                                         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-50 text-orange-600">
                                             <CircleUserRound className="h-7 w-7" />
                                         </div>
@@ -885,7 +1015,7 @@ export default function UserList() {
                                                         isChangingRole ||
                                                         !selectedRoleId
                                                     }
-                                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                                 >
                                                     {isChangingRole && (
                                                         <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -902,7 +1032,7 @@ export default function UserList() {
                                                         setIsRoleEditing(false);
                                                     }}
                                                     disabled={isChangingRole}
-                                                    className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                                                    className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
                                                 >
                                                     Vazgeç
                                                 </button>
@@ -932,12 +1062,12 @@ export default function UserList() {
                             )}
                         </div>
 
-                        <div className="flex justify-end border-t border-gray-200 px-6 py-4">
+                        <div className="flex justify-end border-t border-gray-200 px-4 py-4 sm:px-6">
                             <button
                                 type="button"
                                 onClick={handleCloseUserModal}
                                 disabled={isChangingRole}
-                                className="h-10 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                                className="h-10 w-full rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
                             >
                                 Kapat
                             </button>
@@ -947,16 +1077,16 @@ export default function UserList() {
             )}
 
             {deleteModalUser && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-                        <div className="border-b border-gray-100 px-6 py-5">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 p-2 sm:p-4">
+                    <div className="my-auto w-full max-w-md rounded-2xl bg-white shadow-xl">
+                        <div className="border-b border-gray-100 px-4 py-5 sm:px-6">
                             <h2 className="text-lg font-semibold text-gray-900">Kullanıcıyı Sil</h2>
                             <p className="mt-1 text-sm text-gray-500">
                                 Bu işlem geri alınamaz.
                             </p>
                         </div>
 
-                        <div className="px-6 py-5">
+                        <div className="px-4 py-5 sm:px-6">
                             <p className="text-sm leading-6 text-gray-700">
                                 <span className="font-semibold text-gray-900">
                                     {getFullName(deleteModalUser)}
@@ -965,7 +1095,7 @@ export default function UserList() {
                             </p>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                        <div className="flex flex-col-reverse gap-2 border-t border-gray-100 px-4 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6">
                             <button
                                 type="button"
                                 onClick={() => setDeleteModalUser(null)}

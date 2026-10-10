@@ -666,7 +666,8 @@ export default function ShippingMethodList() {
             )}
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="overflow-x-auto">
+                {/* Masaüstü Tablo Görünümü */}
+                <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-full">
                         <thead className="border-b border-gray-200 bg-gray-50">
                             <tr>
@@ -746,9 +747,7 @@ export default function ShippingMethodList() {
                                                             disabled={
                                                                 isFirst ||
                                                                 isMoving ||
-                                                                Boolean(
-                                                                    movingShippingMethodId
-                                                                )
+                                                                Boolean(movingShippingMethodId)
                                                             }
                                                             className="rounded p-0.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
                                                             title="Yukarı taşı"
@@ -767,9 +766,7 @@ export default function ShippingMethodList() {
                                                             disabled={
                                                                 isLast ||
                                                                 isMoving ||
-                                                                Boolean(
-                                                                    movingShippingMethodId
-                                                                )
+                                                                Boolean(movingShippingMethodId)
                                                             }
                                                             className="rounded p-0.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30"
                                                             title="Aşağı taşı"
@@ -803,7 +800,9 @@ export default function ShippingMethodList() {
                                                         : "bg-gray-100 text-gray-600"
                                                         }`}
                                                 >
-                                                    {shippingMethod.isActive ? "Aktif" : "Pasif"}
+                                                    {shippingMethod.isActive
+                                                        ? "Aktif"
+                                                        : "Pasif"}
                                                 </span>
                                             </td>
 
@@ -836,9 +835,12 @@ export default function ShippingMethodList() {
                                                         <Pencil className="h-4 w-4" />
                                                         Düzenle
                                                     </button>
+
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleChangeStatus(shippingMethod)}
+                                                        onClick={() =>
+                                                            handleChangeStatus(shippingMethod)
+                                                        }
                                                         disabled={isChangingStatus}
                                                         className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${shippingMethod.isActive
                                                             ? "border-orange-200 text-orange-600 hover:bg-orange-50"
@@ -849,8 +851,11 @@ export default function ShippingMethodList() {
                                                             <LoaderCircle className="h-4 w-4 animate-spin" />
                                                         )}
 
-                                                        {shippingMethod.isActive ? "Pasifleştir" : "Aktif Et"}
+                                                        {shippingMethod.isActive
+                                                            ? "Pasifleştir"
+                                                            : "Aktif Et"}
                                                     </button>
+
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -882,8 +887,217 @@ export default function ShippingMethodList() {
                     </table>
                 </div>
 
-                <div className="flex flex-col gap-3 border-t border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-gray-500">
+                {/* Mobil Kart Görünümü */}
+                <div className="divide-y divide-gray-100 md:hidden">
+                    {isLoading ? (
+                        <div className="px-5 py-12 text-center">
+                            <LoaderCircle className="mx-auto h-6 w-6 animate-spin text-[#EE7402]" />
+                        </div>
+                    ) : shippingMethods.length === 0 ? (
+                        <div className="px-5 py-12 text-center">
+                            <p className="text-sm text-gray-500">
+                                Kayıtlı kargo yöntemi bulunamadı.
+                            </p>
+                        </div>
+                    ) : (
+                        shippingMethods.map((shippingMethod, index) => {
+                            const isFirst =
+                                index === 0 && !pagination.hasPrevious;
+                            const isLast =
+                                index === shippingMethods.length - 1 &&
+                                !pagination.hasNext;
+
+                            const isMoving =
+                                movingShippingMethodId ===
+                                shippingMethod.shippingMethodId;
+
+                            const isChangingStatus =
+                                changingStatusId ===
+                                shippingMethod.shippingMethodId;
+
+                            const isDeleting =
+                                deletingShippingMethodId ===
+                                shippingMethod.shippingMethodId;
+
+                            return (
+                                <div
+                                    key={shippingMethod.shippingMethodId}
+                                    className="space-y-4 p-4 transition hover:bg-gray-50"
+                                >
+                                    {/* Başlık ve Sıralama */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <span className="inline-flex min-w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 px-2.5 py-2 text-sm font-semibold text-gray-700">
+                                                {shippingMethod.displayOrder}
+                                            </span>
+
+                                            <div className="min-w-0">
+                                                <p className="break-words text-sm font-semibold text-gray-900">
+                                                    {shippingMethod.name}
+                                                </p>
+
+                                                <p className="mt-1 text-xs text-gray-500">
+                                                    Kargo Yöntemi
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex shrink-0 flex-col gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moveShippingMethod(
+                                                        shippingMethod,
+                                                        "up"
+                                                    )
+                                                }
+                                                disabled={
+                                                    isFirst ||
+                                                    isMoving ||
+                                                    Boolean(movingShippingMethodId)
+                                                }
+                                                className="rounded-md border border-gray-200 p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                                title="Yukarı taşı"
+                                                aria-label="Yukarı taşı"
+                                            >
+                                                <ArrowUp className="h-4 w-4" />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    moveShippingMethod(
+                                                        shippingMethod,
+                                                        "down"
+                                                    )
+                                                }
+                                                disabled={
+                                                    isLast ||
+                                                    isMoving ||
+                                                    Boolean(movingShippingMethodId)
+                                                }
+                                                className="rounded-md border border-gray-200 p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                                title="Aşağı taşı"
+                                                aria-label="Aşağı taşı"
+                                            >
+                                                <ArrowDown className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Ücret ve Durum */}
+                                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                                        <div>
+                                            <p className="mb-1 text-xs font-medium text-gray-500">
+                                                Ücret
+                                            </p>
+
+                                            <p className="text-sm font-semibold text-gray-900">
+                                                {Number(
+                                                    shippingMethod.price ?? 0
+                                                ).toLocaleString("tr-TR", {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                })}{" "}
+                                                TL
+                                            </p>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <p className="mb-1 text-xs font-medium text-gray-500">
+                                                Durum
+                                            </p>
+
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${shippingMethod.isActive
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-gray-100 text-gray-600"
+                                                    }`}
+                                            >
+                                                {shippingMethod.isActive
+                                                    ? "Aktif"
+                                                    : "Pasif"}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* İşlemler */}
+                                    <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-3">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleOpenShippingMethod(
+                                                    shippingMethod.shippingMethodId,
+                                                    false
+                                                )
+                                            }
+                                            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                        >
+                                            <Eye className="h-4 w-4 shrink-0" />
+                                            Görüntüle
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleOpenShippingMethod(
+                                                    shippingMethod.shippingMethodId,
+                                                    true
+                                                )
+                                            }
+                                            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                        >
+                                            <Pencil className="h-4 w-4 shrink-0" />
+                                            Düzenle
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleChangeStatus(shippingMethod)
+                                            }
+                                            disabled={isChangingStatus}
+                                            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${shippingMethod.isActive
+                                                ? "border-orange-200 text-orange-600 hover:bg-orange-50"
+                                                : "border-green-200 text-green-600 hover:bg-green-50"
+                                                }`}
+                                        >
+                                            {isChangingStatus ? (
+                                                <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+                                            ) : null}
+
+                                            <span>
+                                                {shippingMethod.isActive
+                                                    ? "Pasifleştir"
+                                                    : "Aktif Et"}
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleOpenDeleteModal(shippingMethod)
+                                            }
+                                            disabled={isDeleting}
+                                            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {isDeleting ? (
+                                                <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 shrink-0" />
+                                            )}
+                                            Sil
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Sayfalama */}
+                <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:px-5 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-center text-sm text-gray-500 sm:text-left">
                         Toplam{" "}
                         <span className="font-medium text-gray-700">
                             {pagination.count}
@@ -891,26 +1105,22 @@ export default function ShippingMethodList() {
                         kargo yöntemi
                     </p>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                         <button
                             type="button"
                             onClick={() =>
-                                setPageIndex((current) => current - 1)
+                                setPageIndex((current) => Math.max(0, current - 1))
                             }
-                            disabled={
-                                !pagination.hasPrevious || isLoading
-                            }
-                            className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            disabled={!pagination.hasPrevious || isLoading}
+                            className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <ChevronLeft className="h-4 w-4" />
                             Önceki
                         </button>
 
-                        <span className="px-2 text-sm text-gray-600">
-                            {pagination.pages > 0
-                                ? pagination.index + 1
-                                : 0}{" "}
-                            / {pagination.pages}
+                        <span className="whitespace-nowrap px-1 text-sm text-gray-600">
+                            {pagination.pages > 0 ? pagination.index + 1 : 0} /{" "}
+                            {pagination.pages}
                         </span>
 
                         <button
@@ -919,7 +1129,7 @@ export default function ShippingMethodList() {
                                 setPageIndex((current) => current + 1)
                             }
                             disabled={!pagination.hasNext || isLoading}
-                            className="inline-flex h-9 items-center gap-1 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Sonraki
                             <ChevronRight className="h-4 w-4" />
@@ -1104,11 +1314,7 @@ export default function ShippingMethodList() {
                                         <>
                                             <button
                                                 type="button"
-                                                onClick={
-                                                    selectedShippingMethod
-                                                        ? handleCancelEditing
-                                                        : resetModal
-                                                }
+                                                onClick={resetModal}
                                                 disabled={isSaving}
                                                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                                             >

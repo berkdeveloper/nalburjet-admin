@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
     getNewsletterSubscriberById,
@@ -68,7 +69,7 @@ export default function NewsletterSubscriberList() {
 
                 setError(
                     error.message ||
-                        "Bülten aboneleri yüklenirken bir hata oluştu.",
+                    "Bülten aboneleri yüklenirken bir hata oluştu.",
                 );
                 setSubscribers([]);
             } finally {
@@ -129,7 +130,7 @@ export default function NewsletterSubscriberList() {
         } catch (error) {
             setDetailError(
                 error.message ||
-                    "Abone detayı yüklenirken bir hata oluştu.",
+                "Abone detayı yüklenirken bir hata oluştu.",
             );
         } finally {
             setDetailLoading(false);
@@ -183,9 +184,9 @@ export default function NewsletterSubscriberList() {
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <form
                     onSubmit={handleSearchSubmit}
-                    className="flex flex-col gap-3 lg:flex-row"
+                    className="flex flex-col gap-3 lg:flex-row lg:items-end"
                 >
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                         <label
                             htmlFor="subscriber-email"
                             className="mb-1.5 block text-sm font-medium text-gray-700"
@@ -203,7 +204,7 @@ export default function NewsletterSubscriberList() {
                         />
                     </div>
 
-                    <div className="w-full lg:w-48">
+                    <div className="min-w-0 lg:w-48">
                         <label
                             htmlFor="subscriber-status"
                             className="mb-1.5 block text-sm font-medium text-gray-700"
@@ -223,10 +224,10 @@ export default function NewsletterSubscriberList() {
                         </select>
                     </div>
 
-                    <div className="flex items-end gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
                         <button
                             type="submit"
-                            className="rounded-lg bg-[#EE7402] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#d96700]"
+                            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#EE7402] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#d96700]"
                         >
                             Ara
                         </button>
@@ -235,7 +236,7 @@ export default function NewsletterSubscriberList() {
                             type="button"
                             onClick={handleClearSearch}
                             disabled={!email && !appliedEmail}
-                            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Temizle
                         </button>
@@ -250,7 +251,8 @@ export default function NewsletterSubscriberList() {
             )}
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <div className="overflow-x-auto">
+                {/* Masaüstü tablo görünümü */}
+                <div className="hidden overflow-x-auto md:block">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -294,7 +296,7 @@ export default function NewsletterSubscriberList() {
                                         key={subscriber.newsletterSubscriberId}
                                         className="transition hover:bg-gray-50"
                                     >
-                                        <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                                        <td className="max-w-xs break-all px-4 py-4 text-sm font-medium text-gray-900">
                                             {subscriber.email}
                                         </td>
 
@@ -310,10 +312,8 @@ export default function NewsletterSubscriberList() {
                                             )}
                                         </td>
 
-                                        <td className="px-4 py-4 text-sm text-gray-600">
-                                            {formatDate(
-                                                subscriber.subscribedDate,
-                                            )}
+                                        <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-600">
+                                            {formatDate(subscriber.subscribedDate)}
                                         </td>
 
                                         <td className="px-4 py-4 text-right">
@@ -324,7 +324,7 @@ export default function NewsletterSubscriberList() {
                                                         subscriber.newsletterSubscriberId,
                                                     )
                                                 }
-                                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-[#EE7402] hover:bg-orange-50 hover:text-[#EE7402]"
                                             >
                                                 Görüntüle
                                             </button>
@@ -336,8 +336,77 @@ export default function NewsletterSubscriberList() {
                     </table>
                 </div>
 
-                <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-gray-500">
+                {/* Mobil kart görünümü */}
+                <div className="divide-y divide-gray-100 md:hidden">
+                    {loading ? (
+                        <div className="px-4 py-10 text-center text-sm text-gray-500">
+                            Bülten aboneleri yükleniyor...
+                        </div>
+                    ) : subscribers.length === 0 ? (
+                        <div className="px-4 py-10 text-center text-sm text-gray-500">
+                            Bülten abonesi bulunamadı.
+                        </div>
+                    ) : (
+                        subscribers.map((subscriber) => (
+                            <div
+                                key={subscriber.newsletterSubscriberId}
+                                className="space-y-4 p-4"
+                            >
+                                <div className="min-w-0">
+                                    <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        E-posta
+                                    </p>
+                                    <p className="break-all text-sm font-medium text-gray-900">
+                                        {subscriber.email}
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                            Durum
+                                        </p>
+
+                                        {subscriber.isActive ? (
+                                            <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
+                                                Aktif
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                                                Pasif
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                            Abonelik Tarihi
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            {formatDate(subscriber.subscribedDate)}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleOpenSubscriber(
+                                            subscriber.newsletterSubscriberId,
+                                        )
+                                    }
+                                    className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-[#EE7402] hover:bg-orange-50 hover:text-[#EE7402]"
+                                >
+                                    Görüntüle
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Sayfalama */}
+                <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
+                    <div className="text-center text-sm text-gray-500 md:text-left">
                         Toplam{" "}
                         <span className="font-medium text-gray-700">
                             {pagination.count}
@@ -345,17 +414,17 @@ export default function NewsletterSubscriberList() {
                         abone
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
                         <button
                             type="button"
                             onClick={handlePreviousPage}
                             disabled={!pagination.hasPrevious || loading}
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
                         >
                             Önceki
                         </button>
 
-                        <span className="min-w-20 text-center text-sm text-gray-600">
+                        <span className="min-w-16 whitespace-nowrap text-center text-sm text-gray-600">
                             {pagination.pages > 0
                                 ? `${pageIndex + 1} / ${pagination.pages}`
                                 : "0 / 0"}
@@ -365,7 +434,7 @@ export default function NewsletterSubscriberList() {
                             type="button"
                             onClick={handleNextPage}
                             disabled={!pagination.hasNext || loading}
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
                         >
                             Sonraki
                         </button>
@@ -373,11 +442,12 @@ export default function NewsletterSubscriberList() {
                 </div>
             </div>
 
+            {/* Abone detay modalı */}
             {(selectedSubscriber || detailLoading || detailError) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
-                        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                            <div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+                    <div className="flex max-h-[95dvh] w-full max-w-lg flex-col overflow-hidden rounded-xl bg-white shadow-xl">
+                        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6">
+                            <div className="min-w-0">
                                 <h2 className="text-lg font-semibold text-gray-900">
                                     Bülten Abonesi
                                 </h2>
@@ -390,26 +460,14 @@ export default function NewsletterSubscriberList() {
                                 type="button"
                                 onClick={handleCloseSubscriber}
                                 disabled={detailLoading}
-                                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
                                 aria-label="Kapat"
                             >
-                                <svg
-                                    className="h-5 w-5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6 18 18 6M6 6l12 12"
-                                    />
-                                </svg>
+                                <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
                             {detailLoading ? (
                                 <div className="py-8 text-center text-sm text-gray-500">
                                     Abone detayları yükleniyor...
@@ -419,12 +477,12 @@ export default function NewsletterSubscriberList() {
                                     {detailError}
                                 </div>
                             ) : selectedSubscriber ? (
-                                <div className="space-y-4">
-                                    <div>
+                                <div className="space-y-5">
+                                    <div className="min-w-0">
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                             E-posta
                                         </p>
-                                        <p className="mt-1 text-sm font-medium text-gray-900">
+                                        <p className="mt-1 break-all text-sm font-medium text-gray-900">
                                             {selectedSubscriber.email}
                                         </p>
                                     </div>
@@ -434,7 +492,7 @@ export default function NewsletterSubscriberList() {
                                             Durum
                                         </p>
 
-                                        <div className="mt-1">
+                                        <div className="mt-2">
                                             {selectedSubscriber.isActive ? (
                                                 <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
                                                     Aktif
@@ -452,32 +510,28 @@ export default function NewsletterSubscriberList() {
                                             Abonelik Tarihi
                                         </p>
                                         <p className="mt-1 text-sm text-gray-900">
-                                            {formatDate(
-                                                selectedSubscriber.subscribedDate,
-                                            )}
+                                            {formatDate(selectedSubscriber.subscribedDate)}
                                         </p>
                                     </div>
 
-                                    <div>
+                                    <div className="min-w-0">
                                         <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                                             Abone ID
                                         </p>
                                         <p className="mt-1 break-all text-sm text-gray-600">
-                                            {
-                                                selectedSubscriber.newsletterSubscriberId
-                                            }
+                                            {selectedSubscriber.newsletterSubscriberId}
                                         </p>
                                     </div>
                                 </div>
                             ) : null}
                         </div>
 
-                        <div className="flex justify-end border-t border-gray-200 px-6 py-4">
+                        <div className="flex shrink-0 justify-end border-t border-gray-200 px-4 py-4 sm:px-6">
                             <button
                                 type="button"
                                 onClick={handleCloseSubscriber}
                                 disabled={detailLoading}
-                                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
                                 Kapat
                             </button>

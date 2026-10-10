@@ -5,7 +5,11 @@ import { LogOut, Menu, X } from "lucide-react";
 import NotificationBell from "@/features/notifications/components/NotificationBell";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
-export default function AdminHeader({ onMenuClick, isMobileMenuOpen }) {
+export default function AdminHeader({
+    onMenuClick,
+    isMobileMenuOpen,
+    isDesktopSidebarCollapsed,
+}) {
     const router = useRouter();
     const { logout, isLoading } = useAuth();
 
@@ -19,7 +23,11 @@ export default function AdminHeader({ onMenuClick, isMobileMenuOpen }) {
     };
 
     return (
-        <header className="fixed inset-x-0 top-0 z-30 h-16 border-b border-border bg-white lg:left-64">
+        <header
+            className={`fixed inset-x-0 top-0 z-30 h-16 border-b border-border bg-white transition-[left] duration-300 ease-in-out ${
+                isDesktopSidebarCollapsed ? "lg:left-[72px]" : "lg:left-64"
+            }`}
+        >
             <div className="flex h-full min-w-0 items-center justify-between gap-2 px-3 sm:px-4 lg:px-6">
                 <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                     <button
@@ -42,12 +50,8 @@ export default function AdminHeader({ onMenuClick, isMobileMenuOpen }) {
                     <NotificationBell />
 
                     <div className="hidden text-right sm:block">
-                        <p className="text-sm font-medium text-text-primary">
-                            Admin
-                        </p>
-                        <p className="text-xs text-text-secondary">
-                            Yönetici
-                        </p>
+                        <p className="text-sm font-medium text-text-primary">Admin</p>
+                        <p className="text-xs text-text-secondary">Yönetici</p>
                     </div>
 
                     <button
@@ -57,9 +61,7 @@ export default function AdminHeader({ onMenuClick, isMobileMenuOpen }) {
                         className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-2.5 text-sm font-medium text-text-primary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
                     >
                         <LogOut size={16} className="shrink-0" />
-                        <span>
-                            {isLoading ? "Çıkış yapılıyor..." : "Çıkış"}
-                        </span>
+                        <span>{isLoading ? "Çıkış yapılıyor..." : "Çıkış"}</span>
                     </button>
                 </div>
             </div>

@@ -37,7 +37,7 @@ export default function NotificationBell() {
     }, [isOpen]);
 
     return (
-        <div ref={containerRef} className="relative shrink-0">
+        <div ref={containerRef} className="relative shrink-0 -left-2.5">
             <button
                 type="button"
                 onClick={() => setIsOpen((currentValue) => !currentValue)}
@@ -46,7 +46,7 @@ export default function NotificationBell() {
                 aria-expanded={isOpen}
                 aria-haspopup="true"
             >
-                <Bell size={20} />
+                <Bell size={24} />
 
                 {unreadCount > 0 && (
                     <span className="absolute -right-0.5 -top-0.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold leading-none text-white">
