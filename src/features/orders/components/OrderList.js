@@ -33,6 +33,8 @@ import {
     PaymentStatusBadge,
 } from "@/features/orders/components/OrderStatusBadge";
 import { getOrders } from "@/features/orders/services/orderService";
+import { getOrderReturnStatusSummaries } from "@/features/orders/services/orderReturnStatusService";
+import { getReturnStatusNotice } from "@/features/orders/utils/returnStatusDisplay";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
@@ -81,6 +83,10 @@ export default function OrderList({ onSelectOrder }) {
     const [activeFilter, setActiveFilter] = useState(ORDER_LIST_STATUS.ALL);
 
     const [orders, setOrders] = useState([]);
+    // Her sayfanin iade ozetini o sayfadaki siparis kimlikleriyle eslestir.
+    const [returnStatusResult, setReturnStatusResult] = useState({ idsKey: "", statuses: {} });
+    const currentIdsKey = orders.map((item) => item.orderId).filter(Boolean).join("|");
+    const returnStatuses = returnStatusResult.idsKey === currentIdsKey ? returnStatusResult.statuses : {};
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
@@ -96,6 +102,7 @@ export default function OrderList({ onSelectOrder }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [orderNumber, setOrderNumber] = useState("");
+    const [debouncedOrderNumber, setDebouncedOrderNumber] = useState("");
 
     const [orderStatusFilter, setOrderStatusFilter] = useState("All");
     const [paymentStatusFilter, setPaymentStatusFilter] = useState("All");
@@ -124,6 +131,14 @@ export default function OrderList({ onSelectOrder }) {
     }, [searchTerm]);
 
     useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setDebouncedOrderNumber(orderNumber.trim());
+        }, 350);
+
+        return () => clearTimeout(timeoutId);
+    }, [orderNumber]);
+
+    useEffect(() => {
         if (isAuthLoading) {
             return;
         }
@@ -132,11 +147,9 @@ export default function OrderList({ onSelectOrder }) {
 
         async function loadOrders() {
             try {
-                if (orders.length === 0) {
-                    setIsLoading(true);
-                } else {
-                    setIsRefreshing(true);
-                }
+                // Ilk yuklemede isLoading zaten true; diger sorgularda mevcut listeyi koru.
+                // orders.length'i okumamak exhaustive-deps kaynakli yeniden istek dongusunu onler.
+                setIsRefreshing(true);
 
                 setError("");
 
@@ -152,8 +165,8 @@ export default function OrderList({ onSelectOrder }) {
                     params.Search = debouncedSearchTerm;
                 }
 
-                if (orderNumber.trim()) {
-                    params.OrderNumber = orderNumber.trim();
+                if (debouncedOrderNumber) {
+                    params.OrderNumber = debouncedOrderNumber;
                 }
 
                 if (orderStatusFilter !== "All") {
@@ -219,10 +232,10 @@ export default function OrderList({ onSelectOrder }) {
         };
     }, [
         activeFilter,
+        debouncedOrderNumber,
         debouncedSearchTerm,
         deliveryStatusFilter,
         isAuthLoading,
-        orderNumber,
         orderStatusFilter,
         pageIndex,
         pageSize,
@@ -231,6 +244,26 @@ export default function OrderList({ onSelectOrder }) {
         sortBy,
         sortDirection,
     ]);
+
+    // Toplu admin sorgusu: sayfadaki siparisler icin tek istek.
+    useEffect(() => {
+        let active = true;
+        const ids = orders.map((item) => item.orderId).filter(Boolean);
+        // Bos listede etiket render edilmez; effect'te senkron state degisimi gereksiz.
+        if (ids.length === 0) return;
+        getOrderReturnStatusSummaries(ids)
+            .then((response) => {
+                if (!active) return;
+                const summaries = response?.data ?? response;
+                const next = {};
+                for (const item of Array.isArray(summaries) ? summaries : []) next[item.orderId] = item;
+                setReturnStatusResult({ idsKey: ids.join("|"), statuses: next });
+            })
+            .catch((error) => {
+                if (active) console.error("İade/iptal özetleri yüklenemedi:", error);
+            });
+        return () => { active = false; };
+    }, [orders]);
 
     const pageTotal = orders.reduce(
         (total, order) => total + Number(order.grandTotal ?? 0),
@@ -312,6 +345,7 @@ export default function OrderList({ onSelectOrder }) {
         setSearchTerm("");
         setDebouncedSearchTerm("");
         setOrderNumber("");
+        setDebouncedOrderNumber("");
         setOrderStatusFilter("All");
         setPaymentStatusFilter("All");
         setDeliveryStatusFilter("All");
@@ -326,6 +360,7 @@ export default function OrderList({ onSelectOrder }) {
 
     function clearOrderNumber() {
         setOrderNumber("");
+        setDebouncedOrderNumber("");
         setPageIndex(0);
     }
 
@@ -425,6 +460,32 @@ export default function OrderList({ onSelectOrder }) {
                             )}
                         </div>
 
+                        <div className="relative w-full min-w-0 lg:w-72 lg:shrink-0">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+
+                            <input
+                                id="order-number-filter"
+                                type="search"
+                                value={orderNumber}
+                                onChange={handleOrderNumberChange}
+                                placeholder="Sipariş no: BKB-20261007-559C43B"
+                                aria-label="Sipariş numarasına göre ara"
+                                autoComplete="off"
+                                className="h-10 w-full rounded-lg border border-border bg-white pl-10 pr-10 text-sm text-text-primary outline-none transition-colors placeholder:text-text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            />
+
+                            {orderNumber && (
+                                <button
+                                    type="button"
+                                    onClick={clearOrderNumber}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                                    aria-label="Sipariş numarasını temizle"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
                         <div className="flex w-full gap-2 sm:w-auto">
                             <div className="relative min-w-0 flex-1 sm:min-w-44">
                                 <select
@@ -494,44 +555,7 @@ export default function OrderList({ onSelectOrder }) {
                                 )}
                             </div>
 
-                            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                                <div>
-                                    <label
-                                        htmlFor="order-number-filter"
-                                        className="mb-1.5 block text-xs font-semibold text-text-secondary"
-                                    >
-                                        Sipariş No
-                                    </label>
-
-                                    <div className="relative">
-                                        <input
-                                            id="order-number-filter"
-                                            type="text"
-                                            value={orderNumber}
-                                            onChange={
-                                                handleOrderNumberChange
-                                            }
-                                            placeholder="BKB-20261003-..."
-                                            className="h-10 w-full rounded-lg border border-border bg-white px-3 pr-9 text-sm text-text-primary outline-none placeholder:text-text-secondary focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                        />
-
-                                        {orderNumber && (
-                                            <button
-                                                type="button"
-                                                onClick={clearOrderNumber}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                                                aria-label="Sipariş numarasını temizle"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <p className="mt-1 text-[11px] text-text-secondary">
-                                        Tam sipariş numarası ile aranır.
-                                    </p>
-                                </div>
-
+                            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                                 <div>
                                     <label
                                         htmlFor="order-status-filter"
@@ -834,7 +858,14 @@ export default function OrderList({ onSelectOrder }) {
                                                 <span className="text-xs text-text-secondary">
                                                     Sipariş durumu
                                                 </span>
-                                                <OrderStatusBadge status={order.orderStatus} />
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <OrderStatusBadge status={order.orderStatus} />
+                                                    {getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus) && (
+                                                        <span className={`rounded-full border px-2 py-1 text-xs font-semibold ${getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus).className}`}>
+                                                            {getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus).label}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -950,7 +981,14 @@ export default function OrderList({ onSelectOrder }) {
                                             </td>
 
                                             <td className="px-4 py-4 text-center">
-                                                <OrderStatusBadge status={order.orderStatus} />
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <OrderStatusBadge status={order.orderStatus} />
+                                                    {getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus) && (
+                                                        <span className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus).className}`}>
+                                                            {getReturnStatusNotice(returnStatuses[order.orderId], order.orderStatus).label}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             <td className="px-4 py-4 text-center">

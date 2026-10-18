@@ -25,18 +25,12 @@ export default function OrdersPage() {
     const [orderListKey, setOrderListKey] = useState(0);
 
     function handleCloseModal() {
-        if (operationLoading) {
-            return;
-        }
-
+        if (operationLoading) return;
         setSelectedOrder(null);
     }
 
     function handleShowDetail() {
-        if (!selectedOrder) {
-            return;
-        }
-
+        if (!selectedOrder) return;
         router.push(`/siparisler/${selectedOrder.orderId}`);
     }
 
@@ -45,7 +39,12 @@ export default function OrdersPage() {
     }
 
     async function handleOperation(operation) {
-        if (!selectedOrder || operationLoading) {
+        if (!selectedOrder || operationLoading) return false;
+
+        // Ödemesi alınmış siparişler, eski direkt iptal endpoint'iyle iptal edilmemeli.
+        // İptal/iade talebi akışına yönlendirilir.
+        if (operation === "cancel" && selectedOrder.paymentStatus === "Paid") {
+            window.alert("Ödenmiş siparişler için İade / İptal Talepleri modülünü kullanın.");
             return false;
         }
 
@@ -56,55 +55,40 @@ export default function OrdersPage() {
                 case "confirm":
                     await confirmOrder(selectedOrder.orderId);
                     break;
-
                 case "prepare":
                     await prepareOrder(selectedOrder.orderId);
                     break;
-
                 case "paymentPaid":
                     await markOrderPaymentAsPaid(selectedOrder.orderId);
                     break;
-
                 case "paymentFailed":
                     await markOrderPaymentAsFailed(selectedOrder.orderId);
                     break;
-
                 case "ship":
                     await shipOrder(selectedOrder.orderId);
                     break;
-
                 case "deliver":
                     await deliverOrder(selectedOrder.orderId);
                     break;
-
                 case "complete":
                     await completeOrder(selectedOrder.orderId);
                     break;
-
                 case "cancel":
                     await cancelOrder(selectedOrder.orderId);
                     break;
-
                 default:
                     return false;
             }
 
             const response = await getOrderById(selectedOrder.orderId);
-
             setSelectedOrder(response.data);
-            setOrderListKey((currentKey) => currentKey + 1);
-
+            setOrderListKey((current) => current + 1);
             return true;
         } catch (error) {
             console.error("Sipariş işlemi başarısız oldu:", error);
-
-            const message =
-                error?.response?.data?.error?.message ||
-                error?.response?.data?.message ||
+            const message = error?.response?.data?.error?.message || error?.response?.data?.message ||
                 "Sipariş işlemi sırasında bir hata oluştu.";
-
             window.alert(message);
-
             return false;
         } finally {
             setOperationLoading(false);
@@ -115,20 +99,12 @@ export default function OrdersPage() {
         <AdminLayout>
             <main className="min-w-0 space-y-4 sm:space-y-6">
                 <div className="min-w-0">
-                    <h1 className="text-2xl font-bold text-text-primary">
-                        Siparişler
-                    </h1>
-
-                    <p className="mt-1 text-sm text-text-secondary">
-                        Mağazanızdaki siparişleri buradan yönetin.
-                    </p>
+                    <h1 className="text-2xl font-bold text-text-primary">Siparişler</h1>
+                    <p className="mt-1 text-sm text-text-secondary">Mağazanızdaki siparişleri buradan yönetin.</p>
                 </div>
 
                 <div className="min-w-0">
-                    <OrderList
-                        key={orderListKey}
-                        onSelectOrder={setSelectedOrder}
-                    />
+                    <OrderList key={orderListKey} onSelectOrder={setSelectedOrder} />
                 </div>
 
                 {selectedOrder && (

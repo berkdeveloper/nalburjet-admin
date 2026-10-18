@@ -19,6 +19,8 @@ import {
 } from "@/features/orders/constants/orderConstants";
 
 import OrderOperationConfirmModal from "@/features/orders/components/OrderOperationConfirmModal";
+import { getOrderReturnStatusSummaries } from "@/features/orders/services/orderReturnStatusService";
+import { getReturnStatusNotice } from "@/features/orders/utils/returnStatusDisplay";
 
 import { getShippingMethodById } from "@/features/shippingMethods/services/shippingMethodService";
 
@@ -109,7 +111,8 @@ function canPrepareOrder(order) {
 }
 
 function canCancelOrder(order) {
-    return (
+    // Ödemesi alınmış siparişler yalnızca iptal/iade talep sürecinden yönetilir.
+    return order.paymentStatus !== "Paid" && (
         order.orderStatus === "Pending" ||
         order.orderStatus === "Confirmed" ||
         order.orderStatus === "Preparing"
@@ -155,6 +158,13 @@ function canCompleteOrder(order) {
     );
 }
 
+// Yalnizca arayuz gorunumu icin. Asil yetkilendirme ve is kurali backend'dedir.
+function hasBlockingCancellationRequest(request) {
+    if (!request || (request.requestType !== "Cancellation" && request.requestType !== 1)) return false;
+    const status = getReturnStatusNotice(request)?.status;
+    return status !== "Draft" && status !== "Rejected";
+}
+
 export default function OrderDetailModal({
     order,
     onClose,
@@ -167,6 +177,13 @@ export default function OrderDetailModal({
 
     const [selectedOperation, setSelectedOperation] = useState(null);
     const [shippingMethod, setShippingMethod] = useState(null);
+    // Ozeti siparis ID'siyle sakla; modalde siparis degisirse onceki rozeti gosterme.
+    const [returnSummaryResult, setReturnSummaryResult] = useState({ orderId: null, summary: null, error: false });
+    const currentOrderId = order?.orderId;
+    const summaryMatchesOrder = Boolean(currentOrderId) && returnSummaryResult.orderId === currentOrderId;
+    const returnSummary = summaryMatchesOrder ? returnSummaryResult.summary : null;
+    const isReturnSummaryLoading = !summaryMatchesOrder;
+    const isReturnSummaryError = summaryMatchesOrder && returnSummaryResult.error;
 
     useEffect(() => {
         async function loadShippingMethod() {
@@ -189,12 +206,37 @@ export default function OrderDetailModal({
         loadShippingMethod();
     }, [order?.shippingMethodId]);
 
+    useEffect(() => {
+        if (!currentOrderId) return;
+        let active = true;
+        getOrderReturnStatusSummaries([currentOrderId])
+            .then((response) => {
+                if (!active) return;
+                const items = response?.data ?? response;
+                if (!Array.isArray(items)) throw new Error("Sipariş iptal/iade özeti beklenen biçimde alınamadı.");
+                setReturnSummaryResult({
+                    orderId: currentOrderId,
+                    summary: items.find((item) => item.orderId === currentOrderId) ?? null,
+                    error: false,
+                });
+            })
+            .catch((error) => {
+                if (!active) return;
+                console.error("Sipariş iade durumu yüklenemedi:", error);
+                setReturnSummaryResult({ orderId: currentOrderId, summary: null, error: true });
+            });
+        return () => { active = false; };
+    }, [currentOrderId]);
+
     if (!order) {
         return null;
     }
 
     const shippingAddress = order.shippingAddress;
     const billingAddress = order.billingAddress;
+    const returnNotice = getReturnStatusNotice(returnSummary, order.orderStatus);
+    const hasBlockingCancellation = hasBlockingCancellationRequest(returnSummary);
+    const canShowOrderActions = !isReturnSummaryLoading && !isReturnSummaryError && !hasBlockingCancellation;
 
     const shippingAddressLines = getAddressLines(shippingAddress);
     const billingAddressLines = getAddressLines(billingAddress);
@@ -210,7 +252,7 @@ export default function OrderDetailModal({
         : order.shippingCost;
 
     async function handleOperationConfirm() {
-        if (!selectedOperation) {
+        if (!selectedOperation || !canShowOrderActions) {
             return;
         }
 
@@ -241,6 +283,11 @@ export default function OrderDetailModal({
                                 </h2>
 
                                 <OrderStatusBadge status={order.orderStatus} />
+                                {returnNotice && (
+                                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${returnNotice.className}`}>
+                                        {returnNotice.label}
+                                    </span>
+                                )}
                             </div>
 
                             <p className="mt-1 text-sm text-text-secondary">
@@ -348,8 +395,8 @@ export default function OrderDetailModal({
                                         </p>
                                         <p
                                             className={`mt-1 text-sm font-medium ${order.shippingCost === 0
-                                                    ? "text-red-700"
-                                                    : "text-green-700"
+                                                ? "text-red-700"
+                                                : "text-green-700"
                                                 }`}
                                         >
                                             {order.shippingCost === 0
@@ -731,130 +778,146 @@ export default function OrderDetailModal({
                             </p>
 
                             <div className="mt-3 flex flex-wrap gap-2">
-                                {canConfirmOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("confirm")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                {isReturnSummaryLoading ? (
+                                    <p className="text-sm text-text-secondary">
+                                        İptal/iade durumu kontrol ediliyor...
+                                    </p>
+                                ) : isReturnSummaryError ? (
+                                    <p role="alert" className="text-sm text-red-700">
+                                        İptal/iade durumu alınamadı. Güvenlik nedeniyle sipariş işlemleri geçici olarak kapatıldı. Tekrar denemek için pencereyi kapatıp yeniden açın.
+                                    </p>
+                                ) : hasBlockingCancellation ? (
+                                    <p className="text-sm text-amber-800">
+                                        Bu sipariş için devam eden veya tamamlanmış bir iptal talebi bulunuyor. Sipariş işlemleri kapatıldı; talebi İptal/İade yönetiminden takip edin.
+                                    </p>
+                                ) : (
+                                    <>
+                                        {canConfirmOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("confirm")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Siparişi Onayla
+                                            </button>
                                         )}
-                                        Siparişi Onayla
-                                    </button>
-                                )}
 
-                                {canPrepareOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("prepare")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canPrepareOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("prepare")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Hazırlamaya Başla
+                                            </button>
                                         )}
-                                        Hazırlamaya Başla
-                                    </button>
-                                )}
 
-                                {canMarkPaymentAsPaid(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("paymentPaid")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green-600 px-4 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canMarkPaymentAsPaid(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("paymentPaid")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-green-600 px-4 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Ödeme Alındı
+                                            </button>
                                         )}
-                                        Ödeme Alındı
-                                    </button>
-                                )}
 
-                                {canMarkPaymentAsFailed(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("paymentFailed")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-600 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canMarkPaymentAsFailed(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("paymentFailed")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-600 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Ödeme Başarısız
+                                            </button>
                                         )}
-                                        Ödeme Başarısız
-                                    </button>
-                                )}
 
-                                {canShipOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("ship")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canShipOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("ship")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Kargoya Ver
+                                            </button>
                                         )}
-                                        Kargoya Ver
-                                    </button>
-                                )}
 
-                                {canDeliverOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("deliver")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canDeliverOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("deliver")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Teslim Edildi
+                                            </button>
                                         )}
-                                        Teslim Edildi
-                                    </button>
-                                )}
 
-                                {canCompleteOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("complete")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canCompleteOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("complete")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Siparişi Tamamla
+                                            </button>
                                         )}
-                                        Siparişi Tamamla
-                                    </button>
-                                )}
 
-                                {canCancelOrder(order) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOperation("cancel")}
-                                        disabled={operationLoading}
-                                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-600 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {operationLoading && (
-                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                        {canCancelOrder(order) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedOperation("cancel")}
+                                                disabled={operationLoading}
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-600 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {operationLoading && (
+                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                )}
+                                                Siparişi İptal Et
+                                            </button>
                                         )}
-                                        Siparişi İptal Et
-                                    </button>
-                                )}
 
-                                {!canConfirmOrder(order) &&
-                                    !canPrepareOrder(order) &&
-                                    !canMarkPaymentAsPaid(order) &&
-                                    !canMarkPaymentAsFailed(order) &&
-                                    !canShipOrder(order) &&
-                                    !canDeliverOrder(order) &&
-                                    !canCompleteOrder(order) &&
-                                    !canCancelOrder(order) && (
-                                        <p className="text-sm text-text-secondary">
-                                            Bu sipariş için gerçekleştirilebilecek başka bir işlem bulunmuyor.
-                                        </p>
-                                    )}
+                                        {!canConfirmOrder(order) &&
+                                            !canPrepareOrder(order) &&
+                                            !canMarkPaymentAsPaid(order) &&
+                                            !canMarkPaymentAsFailed(order) &&
+                                            !canShipOrder(order) &&
+                                            !canDeliverOrder(order) &&
+                                            !canCompleteOrder(order) &&
+                                            !canCancelOrder(order) && (
+                                                <p className="text-sm text-text-secondary">
+                                                    Bu sipariş için gerçekleştirilebilecek başka bir işlem bulunmuyor.
+                                                </p>
+                                            )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -892,7 +955,7 @@ export default function OrderDetailModal({
                         </button>
                     </div>
                 </div>
-                {selectedOperation && (
+                {selectedOperation && canShowOrderActions && (
                     <OrderOperationConfirmModal
                         order={order}
                         operation={selectedOperation}
