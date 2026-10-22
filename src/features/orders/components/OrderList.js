@@ -116,6 +116,7 @@ export default function OrderList({ onSelectOrder }) {
     const [showFilters, setShowFilters] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [lastUpdatedAt, setLastUpdatedAt] = useState("");
     const [error, setError] = useState("");
 
     const [refreshKey, setRefreshKey] = useState(0);
@@ -199,6 +200,9 @@ export default function OrderList({ onSelectOrder }) {
                     hasPrevious: response?.hasPrevious === true,
                     hasNext: response?.hasNext === true,
                 });
+                setLastUpdatedAt(new Intl.DateTimeFormat("tr-TR", {
+                    hour: "2-digit", minute: "2-digit", second: "2-digit",
+                }).format(new Date()));
             } catch (error) {
                 console.error("Siparişler yüklenemedi:", error);
 
@@ -251,7 +255,7 @@ export default function OrderList({ onSelectOrder }) {
         const ids = orders.map((item) => item.orderId).filter(Boolean);
         // Bos listede etiket render edilmez; effect'te senkron state degisimi gereksiz.
         if (ids.length === 0) return;
-        getOrderReturnStatusSummaries(ids)
+        getOrderReturnStatusSummaries(ids, { cache: "no-store" })
             .then((response) => {
                 if (!active) return;
                 const summaries = response?.data ?? response;
@@ -365,6 +369,8 @@ export default function OrderList({ onSelectOrder }) {
     }
 
     function handleRefresh() {
+        if (isRefreshing) return;
+        setIsRefreshing(true);
         setRefreshKey((current) => current + 1);
     }
 
@@ -395,8 +401,10 @@ export default function OrderList({ onSelectOrder }) {
                                 </span>
                             </div>
 
-                            <p className="mt-1 text-sm text-text-secondary">
-                                Siparişlerinizi görüntüleyin ve yönetin.
+                            <p role="status" className="mt-1 text-sm text-text-secondary">
+                                {isRefreshing ? "Güncel siparişler alınıyor…" :
+                                    lastUpdatedAt ? `Son güncelleme: ${lastUpdatedAt}` :
+                                        "Siparişlerinizi görüntüleyin ve yönetin."}
                             </p>
                         </div>
 
@@ -425,13 +433,14 @@ export default function OrderList({ onSelectOrder }) {
                                 type="button"
                                 onClick={handleRefresh}
                                 disabled={isRefreshing}
+                                aria-busy={isRefreshing}
                                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold text-text-primary transition-colors hover:bg-background-soft disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <RefreshCw
                                     className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""
                                         }`}
                                 />
-                                Yenile
+                                {isRefreshing ? "Yenileniyor…" : "Yenile"}
                             </button>
                         </div>
                     </div>

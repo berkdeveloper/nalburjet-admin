@@ -70,6 +70,7 @@ async function apiRequest(baseUrl, endpoint, options = {}) {
     skipAuth = false,
     skipRefresh = false,
     isFormData = false,
+    responseType,
     ...requestOptions
   } = options;
 
@@ -100,7 +101,9 @@ async function apiRequest(baseUrl, endpoint, options = {}) {
     }
   }
 
-  const data = await parseResponse(response);
+  const data = response.ok && responseType === "blob"
+    ? await response.blob()
+    : await parseResponse(response);
 
   if (!response.ok) {
     throw new ApiError(

@@ -2,7 +2,7 @@
 
 import { LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   addProductImage,
@@ -14,6 +14,10 @@ import { getProductImageUrl } from "@/lib/api/image";
 export default function ProductImageManager({
   product,
   onProductChange,
+  mode = "edit",
+  selectedImages = [],
+  onSelectedImagesChange,
+  disabled = false,
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const [processingImageId, setProcessingImageId] = useState(null);
@@ -21,17 +25,54 @@ export default function ProductImageManager({
 
   const addInputRef = useRef(null);
   const replaceInputRefs = useRef({});
+  const previewUrlsRef = useRef(new Set());
+  const isCreateMode = mode === "create";
 
-  const images = [...(product?.images ?? [])].sort(
+  const images = [...(isCreateMode ? selectedImages : product?.images ?? [])].sort(
     (first, second) => first.sortOrder - second.sortOrder,
   );
 
+  useEffect(() => {
+    const activeUrls = new Set(selectedImages.map((image) => image.previewUrl));
+    for (const url of previewUrlsRef.current) {
+      if (!activeUrls.has(url)) {
+        URL.revokeObjectURL(url);
+        previewUrlsRef.current.delete(url);
+      }
+    }
+  }, [selectedImages]);
+
+  useEffect(() => {
+    const urls = previewUrlsRef.current;
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+      urls.clear();
+    };
+  }, []);
+
+  function createLocalPreview(file) {
+    const previewUrl = URL.createObjectURL(file);
+    previewUrlsRef.current.add(previewUrl);
+    return { file, fileName: file.name, previewUrl };
+  }
+
   async function handleAddImage(event) {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
 
     event.target.value = "";
 
-    if (!file) {
+    if (files.length === 0 || disabled) {
+      return;
+    }
+
+    if (isCreateMode) {
+      const additions = files.map((file, index) => ({
+        ...createLocalPreview(file),
+        productImageId: crypto.randomUUID(),
+        sortOrder: selectedImages.length + index,
+      }));
+      onSelectedImagesChange([...selectedImages, ...additions]);
+      setError(null);
       return;
     }
 
@@ -41,7 +82,7 @@ export default function ProductImageManager({
 
       const response = await addProductImage(
         product.productId,
-        file,
+        files[0],
       );
 
       const newImage = response?.data;
@@ -65,7 +106,16 @@ export default function ProductImageManager({
 
     event.target.value = "";
 
-    if (!file) {
+    if (!file || disabled) {
+      return;
+    }
+
+    if (isCreateMode) {
+      const replacement = createLocalPreview(file);
+      onSelectedImagesChange(selectedImages.map((item) =>
+        item.productImageId === image.productImageId ? { ...item, ...replacement } : item,
+      ));
+      setError(null);
       return;
     }
 
@@ -100,6 +150,15 @@ export default function ProductImageManager({
   }
 
   async function handleDeleteImage(image) {
+    if (disabled) return;
+    if (isCreateMode) {
+      onSelectedImagesChange(selectedImages
+        .filter((item) => item.productImageId !== image.productImageId)
+        .map((item, index) => ({ ...item, sortOrder: index })));
+      setError(null);
+      return;
+    }
+
     const confirmed = window.confirm(
       "Bu ürün görselini silmek istediğinize emin misiniz?",
     );
@@ -133,23 +192,24 @@ export default function ProductImageManager({
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h4 className="text-sm font-semibold text-text-primary">
             Ürün Görselleri
           </h4>
 
           <p className="mt-0.5 text-xs text-text-secondary">
-            Görsel ekleyebilir, mevcut görselleri değiştirebilir veya
-            silebilirsiniz.
+            {isCreateMode
+              ? "Görselleri seçip önizleyebilir, değiştirebilir veya kaldırabilirsiniz. Görseller ürün oluşturulduğunda kaydedilir."
+              : "Görsel ekleyebilir, mevcut görselleri değiştirebilir veya silebilirsiniz."}
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => addInputRef.current?.click()}
-          disabled={isUploading}
-          className="flex h-9 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium text-text-primary hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={disabled || isUploading}
+          className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border px-3 text-xs font-medium text-text-primary hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isUploading ? (
             <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -163,6 +223,8 @@ export default function ProductImageManager({
           ref={addInputRef}
           type="file"
           accept="image/*"
+          multiple={isCreateMode}
+          disabled={disabled || isUploading}
           onChange={handleAddImage}
           className="hidden"
         />
@@ -177,13 +239,13 @@ export default function ProductImageManager({
       {images.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
           <p className="text-sm text-text-secondary">
-            Henüz ürün görseli bulunmuyor.
+            {isCreateMode ? "Henüz ürün görseli seçilmedi." : "Henüz ürün görseli bulunmuyor."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {images.map((image) => {
-            const imageUrl = getProductImageUrl(image.storageKey);
+            const imageUrl = isCreateMode ? image.previewUrl : getProductImageUrl(image.storageKey);
             const isProcessing =
               processingImageId === image.productImageId;
 
@@ -223,7 +285,7 @@ export default function ProductImageManager({
                   <div className="mt-2 flex items-center gap-1">
                     <button
                       type="button"
-                      disabled={isProcessing}
+                      disabled={disabled || isProcessing}
                       onClick={() => {
                         replaceInputRefs.current[
                           image.productImageId
@@ -237,7 +299,9 @@ export default function ProductImageManager({
 
                     <button
                       type="button"
-                      disabled={isProcessing}
+                      disabled={disabled || isProcessing}
+                      aria-label={`${isCreateMode ? "Seçilen görseli kaldır" : "Görseli sil"}: ${image.fileName || "Ürün görseli"}`}
+                      title={isCreateMode ? "Kaldır" : "Sil"}
                       onClick={() => handleDeleteImage(image)}
                       className="flex items-center justify-center rounded-md border border-border px-2 py-1.5 text-red-600 hover:border-red-200 hover:bg-red-50 disabled:opacity-50"
                     >
@@ -252,6 +316,7 @@ export default function ProductImageManager({
                       }}
                       type="file"
                       accept="image/*"
+                      disabled={disabled || isProcessing}
                       onChange={(event) =>
                         handleReplaceImage(image, event)
                       }

@@ -4,6 +4,8 @@ import {
     Check,
     ChevronDown,
     ChevronRight,
+    ChevronsDownUp,
+    ChevronsUpDown,
     LoaderCircle,
     Pencil,
     Plus,
@@ -25,6 +27,9 @@ import CategoryCreateModal from "@/features/categories/components/CategoryCreate
 import CategoryDeleteModal from "@/features/categories/components/CategoryDeleteModal";
 import CategoryEditModal from "@/features/categories/components/CategoryEditModal";
 import CategoryDeactivateModal from "@/features/categories/components/CategoryDeactivateModal";
+import { buildCategoryTree, getVisibleCategoryTree } from "@/features/categories/utils/categoryTree";
+import StorefrontLink from "@/components/ui/StorefrontLink";
+import { getCategoryStorefrontUrl } from "@/lib/storefront";
 
 const PAGE_SIZE = 100;
 
@@ -34,56 +39,37 @@ const STATUS_OPTIONS = [
     { value: "false", label: "Pasif" },
 ];
 
-function buildCategoryTree(categories) {
-    const childrenMap = new Map();
+function CategoryLabel({ category, hasChildren, isCollapsed, onToggle, mobile = false }) {
+    const Tag = hasChildren ? "button" : "div";
+    const Chevron = isCollapsed ? ChevronRight : ChevronDown;
 
-    categories.forEach((category) => {
-        const parentId = category.parentCategoryId ?? null;
-
-        if (!childrenMap.has(parentId)) {
-            childrenMap.set(parentId, []);
-        }
-
-        childrenMap.get(parentId).push(category);
-    });
-
-    childrenMap.forEach((children) => {
-        children.sort((a, b) =>
-            a.name.localeCompare(b.name, "tr", {
-                sensitivity: "base",
-            })
-        );
-    });
-
-    const result = [];
-
-    function addChildren(parentId, level) {
-        const children = childrenMap.get(parentId) ?? [];
-
-        children.forEach((category) => {
-            result.push({
-                category,
-                level,
-            });
-
-            addChildren(category.categoryId, level + 1);
-        });
-    }
-
-    addChildren(null, 0);
-
-    const listedIds = new Set(result.map((item) => item.category.categoryId));
-
-    categories.forEach((category) => {
-        if (!listedIds.has(category.categoryId)) {
-            result.push({
-                category,
-                level: 0,
-            });
-        }
-    });
-
-    return result;
+    return (
+        <Tag
+            {...(hasChildren ? {
+                type: "button",
+                onClick: onToggle,
+                "aria-expanded": !isCollapsed,
+                "aria-label": `${category.name} alt kategorilerini ${isCollapsed ? "genişlet" : "daralt"}`,
+            } : {})}
+            className={`flex min-w-0 flex-1 items-start gap-2 rounded text-left ${hasChildren ? "cursor-pointer transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary" : ""}`}
+        >
+            {hasChildren ? (
+                <Chevron aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary" />
+            ) : (
+                <span aria-hidden="true" className="w-4 shrink-0" />
+            )}
+            <span className="min-w-0 flex-1">
+                <span className={`block text-sm font-semibold text-text-primary ${mobile ? "break-words" : "truncate"}`}>
+                    {category.name}
+                </span>
+                {category.description && (
+                    <span className={`mt-0.5 block text-xs text-text-secondary ${mobile ? "break-words leading-5" : "max-w-[500px] truncate"}`}>
+                        {category.description}
+                    </span>
+                )}
+            </span>
+        </Tag>
+    );
 }
 
 function getLevelBadge(level) {
@@ -143,6 +129,7 @@ function getCategoryLevel(category, categoryMap) {
 
 export default function CategoryList() {
     const [categories, setCategories] = useState([]);
+    const [collapsedIds, setCollapsedIds] = useState(() => new Set());
 
     const [searchInput, setSearchInput] = useState("");
     const [search, setSearch] = useState("");
@@ -251,6 +238,26 @@ export default function CategoryList() {
         [filteredCategories]
     );
 
+    const visibleCategoryTree = useMemo(
+        () => getVisibleCategoryTree(categoryTree, collapsedIds),
+        [categoryTree, collapsedIds]
+    );
+
+    // Use the full list so filtering or collapsing cannot shorten the public URL.
+    const categoryMap = useMemo(
+        () => new Map(categories.map((category) => [category.categoryId, category])),
+        [categories]
+    );
+
+    function toggleCategory(categoryId) {
+        setCollapsedIds((current) => {
+            const next = new Set(current);
+            if (next.has(categoryId)) next.delete(categoryId);
+            else next.add(categoryId);
+            return next;
+        });
+    }
+
     const parentCategoryOptions = useMemo(() => {
         const categoryMap = new Map(
             categories.map((category) => [category.categoryId, category])
@@ -271,16 +278,19 @@ export default function CategoryList() {
     function handleSearchSubmit(event) {
         event.preventDefault();
         setSearch(searchInput.trim());
+        setCollapsedIds(new Set());
     }
 
     function handleStatusChange(event) {
         setStatus(event.target.value);
+        setCollapsedIds(new Set());
     }
 
     function handleClearFilters() {
         setSearchInput("");
         setSearch("");
         setStatus("");
+        setCollapsedIds(new Set());
     }
 
     function handleOpenCreateModal() {
@@ -599,6 +609,26 @@ export default function CategoryList() {
                                 )} kategori`}
                         </p>
                     </div>
+                    <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                        <button
+                            type="button"
+                            onClick={() => setCollapsedIds(new Set(categoryTree.filter((item) => item.hasChildren).map((item) => item.category.categoryId)))}
+                            disabled={isLoading || !categoryTree.some((item) => item.hasChildren)}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <ChevronsDownUp aria-hidden="true" className="h-4 w-4" />
+                            Tümünü Daralt
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCollapsedIds(new Set())}
+                            disabled={isLoading || !categoryTree.some((item) => item.hasChildren)}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <ChevronsUpDown aria-hidden="true" className="h-4 w-4" />
+                            Tümünü Genişlet
+                        </button>
+                    </div>
                 </div>
 
                 {error && (
@@ -630,7 +660,7 @@ export default function CategoryList() {
                     <>
                         {/* Mobil: dikey kaydırılabilen kategori kartları */}
                         <div className="space-y-3 p-3 md:hidden">
-                            {categoryTree.map(({ category, level }) => {
+                            {visibleCategoryTree.map(({ category, level, hasChildren }) => {
                                 const statusBadge = getStatusBadge(category.isActive);
                                 const levelBadge = getLevelBadge(level);
 
@@ -638,29 +668,16 @@ export default function CategoryList() {
                                     <article
                                         key={category.categoryId}
                                         className="overflow-hidden rounded-xl border border-border bg-white"
+                                        style={{ marginLeft: `${Math.min(level, 4) * 12}px` }}
                                     >
                                         <div className="flex min-w-0 items-start gap-2 p-3">
-                                            <div className="flex min-w-0 flex-1 items-start gap-2">
-                                                <div className="mt-0.5 flex shrink-0 items-center text-text-secondary">
-                                                    {level === 0 ? (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    )}
-                                                </div>
-
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="break-words text-sm font-semibold text-text-primary">
-                                                        {category.name}
-                                                    </p>
-
-                                                    {category.description && (
-                                                        <p className="mt-1 break-words text-xs leading-5 text-text-secondary">
-                                                            {category.description}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <CategoryLabel
+                                                category={category}
+                                                hasChildren={hasChildren}
+                                                isCollapsed={collapsedIds.has(category.categoryId)}
+                                                onToggle={() => toggleCategory(category.categoryId)}
+                                                mobile
+                                            />
 
                                             <span
                                                 className={`inline-flex shrink-0 rounded-full px-2 py-1 text-xs font-medium ${statusBadge.className}`}
@@ -678,7 +695,9 @@ export default function CategoryList() {
                                                 </span>
 
                                                 <span className="break-all text-xs text-text-secondary">
-                                                    {category.slug || "—"}
+                                                    <StorefrontLink href={getCategoryStorefrontUrl(category, categoryMap)}>
+                                                        {category.slug || "—"}
+                                                    </StorefrontLink>
                                                 </span>
                                             </div>
 
@@ -766,7 +785,7 @@ export default function CategoryList() {
                                 </thead>
 
                                 <tbody>
-                                    {categoryTree.map(({ category, level }) => {
+                                    {visibleCategoryTree.map(({ category, level, hasChildren }) => {
                                         const statusBadge = getStatusBadge(category.isActive);
 
                                         return (
@@ -787,27 +806,16 @@ export default function CategoryList() {
                                                             </span>
                                                         )}
 
-                                                        {level === 0 ? (
-                                                            <ChevronDown className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
-                                                        ) : (
-                                                            <ChevronRight className="mr-2 h-4 w-4 shrink-0 text-text-secondary" />
-                                                        )}
-
-                                                        <div className="min-w-0">
-                                                            <p className="truncate text-sm font-semibold text-text-primary">
-                                                                {category.name}
-                                                            </p>
-
-                                                            {category.description && (
-                                                                <p className="mt-0.5 max-w-[500px] truncate text-xs text-text-secondary">
-                                                                    {category.description}
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                        <CategoryLabel
+                                                            category={category}
+                                                            hasChildren={hasChildren}
+                                                            isCollapsed={collapsedIds.has(category.categoryId)}
+                                                            onToggle={() => toggleCategory(category.categoryId)}
+                                                        />
                                                     </div>
                                                 </td>
 
-                                                <td className="px-3 py-4">
+                                                <td className="px-3 py-4 min-w-40">
                                                     {(() => {
                                                         const levelBadge = getLevelBadge(level);
 
@@ -831,7 +839,9 @@ export default function CategoryList() {
 
                                                 <td className="min-w-56 px-2 py-4">
                                                     <span className="text-sm text-text-secondary">
-                                                        {category.slug || "—"}
+                                                        <StorefrontLink href={getCategoryStorefrontUrl(category, categoryMap)}>
+                                                            {category.slug || "—"}
+                                                        </StorefrontLink>
                                                     </span>
                                                 </td>
 

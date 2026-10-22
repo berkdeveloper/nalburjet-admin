@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { getCategories } from "@/features/categories/services/categoryService";
 import { createProduct } from "@/features/products/services/productService";
 import CategorySelectorModal from "@/features/categories/components/CategorySelectorModal";
+import RichTextEditor from "@/components/ui/RichTextEditor";
+import ProductImageManager from "@/features/products/components/ProductImageManager";
 
 const INITIAL_FORM = {
     categoryId: "",
@@ -134,10 +136,6 @@ export default function ProductCreateModal({
         }));
     }
 
-    function handleImageChange(event) {
-        setImages(Array.from(event.target.files ?? []));
-    }
-
     function validate() {
         if (!form.categoryId) {
             return new Error("Kategori seçimi zorunludur.");
@@ -216,8 +214,8 @@ export default function ProductCreateModal({
             appendFormValue(formData, "IsWeeklyDeal", form.isWeeklyDeal);
             appendFormValue(formData, "IsHighlight", form.isHighlight);
 
-            images.forEach((file) => {
-                formData.append("Images", file);
+            images.forEach((image) => {
+                formData.append("Images", image.file);
             });
 
             const response = await createProduct(formData);
@@ -591,34 +589,24 @@ export default function ProductCreateModal({
                                 Açıklama
                             </h4>
 
-                            <textarea
-                                name="description"
+                            <RichTextEditor
                                 value={form.description}
-                                onChange={handleChange}
-                                rows={5}
-                                className="w-full resize-none rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-primary"
+                                onChange={(description) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        description,
+                                    }))
+                                }
+                                disabled={isSubmitting}
                             />
                         </section>
 
-                        <section>
-                            <h4 className="mb-4 text-sm font-semibold text-text-primary">
-                                Ürün Görselleri
-                            </h4>
-
-                            <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleImageChange}
-                                className="block w-full cursor-pointer text-sm text-text-secondary file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-white file:transition-colors file:duration-150 hover:file:bg-primary-hover"
-                            />
-
-                            {images.length > 0 && (
-                                <p className="mt-2 text-xs text-text-secondary">
-                                    {images.length} görsel seçildi.
-                                </p>
-                            )}
-                        </section>
+                        <ProductImageManager
+                            mode="create"
+                            selectedImages={images}
+                            onSelectedImagesChange={setImages}
+                            disabled={isSubmitting}
+                        />
                     </div>
 
                     <div className="flex justify-end gap-3 border-t border-border px-6 py-4">

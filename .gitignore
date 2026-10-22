@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local tests, previews and development-only notes
+/tests/
+/tools/
+/docs/
+/artifacts/
+/output/
+/tmp/
+**/*.test.*
+**/*.spec.*

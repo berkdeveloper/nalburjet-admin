@@ -6,6 +6,11 @@ import {
     getCartById,
     getCarts,
 } from "@/features/carts/services/cartService";
+import { getCartPagination } from "@/features/carts/utils/cartPagination";
+
+function getCustomerName(cart) {
+    return cart.customerName?.trim() || (cart.userId ? "Kullanıcı" : "Misafir");
+}
 
 export default function CartList() {
     const [carts, setCarts] = useState([]);
@@ -15,6 +20,7 @@ export default function CartList() {
     const [error, setError] = useState("");
 
     const [pageIndex, setPageIndex] = useState(0);
+    const [refreshVersion, setRefreshVersion] = useState(0);
     const pageSize = 10;
 
     const [pagination, setPagination] = useState({
@@ -32,35 +38,6 @@ export default function CartList() {
     const [deleteError, setDeleteError] = useState("");
 
     const [itemToDelete, setItemToDelete] = useState(null);
-
-    async function loadCarts() {
-        try {
-            setLoading(true);
-            setError("");
-
-            const response = await getCarts({
-                params: {
-                    "PageRequest.PageIndex": pageIndex,
-                    "PageRequest.PageSize": pageSize,
-                    Search: appliedSearch || undefined,
-                },
-            });
-
-            setCarts(response.items ?? []);
-
-            setPagination({
-                count: response.count ?? 0,
-                pages: response.pages ?? 0,
-                hasPrevious: response.hasPrevious ?? false,
-                hasNext: response.hasNext ?? false,
-            });
-        } catch (error) {
-            setError(error.message || "Sepetler yüklenirken bir hata oluştu.");
-            setCarts([]);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     useEffect(() => {
         let cancelled = false;
@@ -82,14 +59,15 @@ export default function CartList() {
                     return;
                 }
 
-                setCarts(response.items ?? []);
+                const nextPagination = getCartPagination(response, pageIndex, pageSize);
 
-                setPagination({
-                    count: response.count ?? 0,
-                    pages: response.pages ?? 0,
-                    hasPrevious: response.hasPrevious ?? false,
-                    hasNext: response.hasNext ?? false,
-                });
+                if (pageIndex > 0 && pageIndex >= nextPagination.pages) {
+                    setPageIndex(Math.max(0, nextPagination.pages - 1));
+                    return;
+                }
+
+                setCarts(response.items ?? []);
+                setPagination(nextPagination);
             } catch (error) {
                 if (cancelled) {
                     return;
@@ -99,6 +77,7 @@ export default function CartList() {
                     error.message || "Sepetler yüklenirken bir hata oluştu.",
                 );
                 setCarts([]);
+                setPagination({ count: 0, pages: 0, hasPrevious: false, hasNext: false });
             } finally {
                 if (!cancelled) {
                     setLoading(false);
@@ -111,7 +90,7 @@ export default function CartList() {
         return () => {
             cancelled = true;
         };
-    }, [pageIndex, appliedSearch]);
+    }, [pageIndex, appliedSearch, refreshVersion]);
 
     async function handleSearchSubmit(event) {
         event.preventDefault();
@@ -204,7 +183,7 @@ export default function CartList() {
             setSelectedCart(updatedCart);
             setItemToDelete(null);
 
-            await loadCarts();
+            setRefreshVersion((current) => current + 1);
         } catch (error) {
             setDeleteError(
                 error.message || "Sepet ürünü silinirken bir hata oluştu.",
@@ -216,7 +195,7 @@ export default function CartList() {
 
     function handlePreviousPage() {
         if (pagination.hasPrevious && !loading) {
-            setPageIndex((current) => current - 1);
+            setPageIndex((current) => Math.max(0, current - 1));
         }
     }
 
@@ -294,6 +273,12 @@ export default function CartList() {
                     </div>
                 )}
 
+                {carts.some((cart) => cart.customerInfoUnavailable) && !loading && (
+                    <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Bazı kullanıcıların iletişim bilgileri alınamadı. Sepetleri görüntüleyebilirsiniz; bilgileri yeniden almak için sayfayı yenileyin.
+                    </div>
+                )}
+
                 <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                     {/* Masaüstü Tablo Görünümü */}
                     <div className="hidden overflow-x-auto md:block">
@@ -353,7 +338,7 @@ export default function CartList() {
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900">
-                                                    {cart.customerName || "Misafir"}
+                                                    {getCustomerName(cart)}
                                                 </div>
                                             </td>
 
@@ -420,7 +405,7 @@ export default function CartList() {
                                             </p>
 
                                             <p className="break-words text-sm font-semibold text-gray-900">
-                                                {cart.customerName || "Misafir"}
+                                                {getCustomerName(cart)}
                                             </p>
                                         </div>
 
@@ -576,7 +561,7 @@ export default function CartList() {
                                             </p>
 
                                             <p className="mt-2 break-words text-sm font-medium text-gray-900">
-                                                {selectedCart.customerName || "Misafir"}
+                                                {getCustomerName(selectedCart)}
                                             </p>
                                         </div>
 

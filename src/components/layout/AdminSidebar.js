@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     Bell,
+    BookOpen,
     Boxes,
     LayoutDashboard,
     Mail,
@@ -24,9 +25,11 @@ const navigationItems = [
     { label: "Dashboard", href: "/", icon: LayoutDashboard },
     { label: "Siparişler", href: "/siparisler", icon: ShoppingCart },
     { label: "İade / İptal Talepleri", href: "/iade-iptal-talepleri", icon: RotateCcw },
+    { label: "Ödeme İncelemeleri", href: "/odeme-incelemeleri", icon: ShieldCheck },
     { label: "Bildirimler", href: "/bildirimler", icon: Bell },
     { label: "Ürünler", href: "/urunler", icon: Package },
     { label: "Kategoriler", href: "/kategoriler", icon: Tags },
+    { label: "Bloglar", href: "/bloglar", icon: BookOpen },
     { label: "Vitrin Ürünleri", href: "/vitrin-urunleri", icon: Boxes },
     { label: "Kullanıcılar", href: "/kullanicilar", icon: Users },
     { label: "Roller", href: "/roller", icon: ShieldCheck },

@@ -1,11 +1,37 @@
 import { adminApi } from "@/lib/api/client";
 
 export function getOrders(options = {}) {
-    return adminApi.get("/Orders", options);
+    return adminApi.get("/Orders", { ...options, cache: "no-store" });
 }
 
 export function getOrderById(id, options = {}) {
     return adminApi.get(`/Orders/${id}`, options);
+}
+
+export function getOrderInvoicePreparation(id, options = {}) {
+    return adminApi.get(`/Faturaport/orders/${id}/preparation`, options);
+}
+
+export function getTestInvoicePreparation(options = {}) {
+    return adminApi.post("/Faturaport/test-scenario/preparation", null, options);
+}
+
+export function getOrderInvoiceState(id, options = {}) {
+    return adminApi.get(`/Faturaport/orders/${id}/invoice`, options);
+}
+export function createOrderInvoiceDraft(id, options = {}) {
+    return adminApi.post(`/Faturaport/orders/${id}/invoice/draft`, null, options);
+}
+export function finalizeOrderInvoice(id, options = {}) {
+    return adminApi.post(`/Faturaport/orders/${id}/invoice/finalize`, null, options);
+}
+export function refreshOrderInvoice(id, options = {}) {
+    return adminApi.post(`/Faturaport/orders/${id}/invoice/refresh`, null, options);
+}
+export function getOrderInvoiceFile(id, xml = false, options = {}) {
+    return adminApi.get(`/Faturaport/orders/${id}/invoice/file`, {
+        ...options, params: { xml }, responseType: "blob",
+    });
 }
 
 export function confirmOrder(id, options = {}) {

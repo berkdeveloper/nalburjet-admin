@@ -10,6 +10,7 @@ import {
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import OrderOperationConfirmModal from "@/features/orders/components/OrderOperationConfirmModal";
+import OrderInvoicePreparationPanel from "@/features/orders/components/OrderInvoicePreparationPanel";
 import {
     DeliveryStatusBadge,
     OrderStatusBadge,
@@ -731,6 +732,11 @@ export default function OrderDetailPage() {
                                 </table>
                             </div>
                         </section>
+
+                        <OrderInvoicePreparationPanel
+                            key={`${order.orderId}-${order.orderStatus}-${order.paymentStatus}-${order.deliveryStatus}-${order.grandTotal}`}
+                            orderId={order.orderId}
+                        />
 
                         <div className="grid gap-5 lg:grid-cols-2">
                             <section className="rounded-xl border border-border bg-white">

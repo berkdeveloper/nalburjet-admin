@@ -19,6 +19,7 @@ import {
 } from "@/features/orders/constants/orderConstants";
 
 import OrderOperationConfirmModal from "@/features/orders/components/OrderOperationConfirmModal";
+import OrderInvoicePreparationPanel from "@/features/orders/components/OrderInvoicePreparationPanel";
 import { getOrderReturnStatusSummaries } from "@/features/orders/services/orderReturnStatusService";
 import { getReturnStatusNotice } from "@/features/orders/utils/returnStatusDisplay";
 
@@ -598,6 +599,11 @@ export default function OrderDetailModal({
                                     </table>
                                 </div>
                             </section>
+
+                            <OrderInvoicePreparationPanel
+                                key={`${order.orderId}-${order.orderStatus}-${order.paymentStatus}-${order.deliveryStatus}-${order.grandTotal}`}
+                                orderId={order.orderId}
+                            />
 
                             <div className="grid gap-4 lg:grid-cols-2">
                                 <section>

@@ -28,6 +28,8 @@ import {
   getProductCollections,
 } from "@/features/productCollections/services/productCollectionService";
 import { getProductImageUrl } from "@/lib/api/image";
+import StorefrontLink from "@/components/ui/StorefrontLink";
+import { getProductStorefrontUrl } from "@/lib/storefront";
 
 const PAGE_SIZE = 15;
 const BRAND_PAGE_SIZE = 100;
@@ -636,7 +638,9 @@ export default function ProductList() {
                         <td className="px-5 py-4">
                           <div className="max-w-[280px]">
                             <p className="truncate text-sm font-semibold text-text-primary">
-                              {product?.name || "—"}
+                              <StorefrontLink href={getProductStorefrontUrl(product)}>
+                                {product?.name || "—"}
+                              </StorefrontLink>
                             </p>
 
                             {product?.brand && (
@@ -891,7 +895,9 @@ export default function ProductList() {
 
                       <div className="min-w-0 flex-1">
                         <p className="break-words text-sm font-semibold text-text-primary">
-                          {product.name || "—"}
+                          <StorefrontLink href={getProductStorefrontUrl(product)}>
+                            {product.name || "—"}
+                          </StorefrontLink>
                         </p>
 
                         {product.brand && (
