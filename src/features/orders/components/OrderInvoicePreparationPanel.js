@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FileText, LoaderCircle } from "lucide-react";
+import InvoiceRecoveryPanel from "./InvoiceRecoveryPanel";
 import { getOrderInvoicePreparation, getTestInvoicePreparation, getOrderInvoiceState,
-    createOrderInvoiceDraft, finalizeOrderInvoice, refreshOrderInvoice, getOrderInvoiceFile } from "@/features/orders/services/orderService";
+    createOrderInvoiceDraft, finalizeOrderInvoice, refreshOrderInvoice, getOrderInvoiceFile,
+    investigateOrderInvoice, retryOrderInvoiceRecovery, getOrderInvoiceRecoveryHistory } from "@/features/orders/services/orderService";
 
 const invoiceLabels = {
     CreatingDraft: "Taslak işlemi sürüyor — sonucu kontrol edin",
@@ -45,6 +47,8 @@ export default function OrderInvoicePreparationPanel({ orderId }) {
     const requestRef = useRef(null);
     const [invoice, setInvoice] = useState(null);
     const [invoiceLoadedFor, setInvoiceLoadedFor] = useState(null);
+    const [recovery, setRecovery] = useState(null);
+    const [recoveryHistory, setRecoveryHistory] = useState([]);
     const currentInvoice = invoice?.orderId === orderId ? invoice : null;
     const currentPreparation = preparation?.orderId === orderId && !preparation?.isTestScenario ? preparation : null;
 
@@ -54,13 +58,19 @@ export default function OrderInvoicePreparationPanel({ orderId }) {
             if (controller.signal.aborted) return;
             setInvoice(response.data);
             setInvoiceLoadedFor(orderId);
+            getOrderInvoiceRecoveryHistory(orderId, { signal: controller.signal }).then(history => {
+                if (!controller.signal.aborted) {
+                    setRecoveryHistory(history.data || []);
+                    setRecovery(history.data?.[0] || null);
+                }
+            }).catch(() => { /* Invoice details remain usable if history is unavailable. */ });
         }).catch(exception => {
             if (!controller.signal.aborted) setError(exception.message || "Fatura kaydı alınamadı.");
         });
         return () => controller.abort();
     }, [orderId]);
 
-    async function invoiceAction(action, xml = false) {
+    async function invoiceAction(action, xml = false, recoveryRequest = null) {
         if (requestRef.current) return;
         if ((action === "draft" || action === "finalize") && !currentPreparation?.isPreparationComplete) {
             setError("Önce bu siparişin fatura hazırlığını kontrol edip eksik bilgileri tamamlayın.");
@@ -69,7 +79,16 @@ export default function OrderInvoicePreparationPanel({ orderId }) {
         const controller = new AbortController();
         requestRef.current = controller; setLoading(true); setError("");
         try {
-            if (action === "file") {
+            if (action === "investigate") {
+                const response = await investigateOrderInvoice(orderId, { signal: controller.signal });
+                if (!controller.signal.aborted && response.data?.invoice?.orderId === orderId) {
+                    setRecovery(response.data); setInvoice(response.data.invoice);
+                }
+            } else if (action === "retryRecovery") {
+                setRecovery(null);
+                const response = await retryOrderInvoiceRecovery(orderId, recoveryRequest, { signal: controller.signal });
+                if (!controller.signal.aborted && response.data?.orderId === orderId) setInvoice(response.data);
+            } else if (action === "file") {
                 const file = await getOrderInvoiceFile(orderId, xml, { signal: controller.signal });
                 if (controller.signal.aborted) return;
                 const url = URL.createObjectURL(file);
@@ -92,6 +111,16 @@ export default function OrderInvoicePreparationPanel({ orderId }) {
                 } catch { /* Keep the error and disable automatic retries. */ }
             }
         } finally {
+            if (!controller.signal.aborted && (action === "investigate" || action === "retryRecovery")) {
+                try {
+                    const response = await getOrderInvoiceRecoveryHistory(orderId, { signal: controller.signal });
+                    if (!controller.signal.aborted) {
+                        setRecoveryHistory(response.data || []);
+                        setRecovery(response.data?.[0] || null);
+                        if (response.data?.[0]?.invoice?.orderId === orderId) setInvoice(response.data[0].invoice);
+                    }
+                } catch { /* Preserve the primary operation result if history cannot be loaded. */ }
+            }
             if (!controller.signal.aborted) { setLoading(false); requestRef.current = null; }
         }
     }
@@ -261,6 +290,11 @@ export default function OrderInvoicePreparationPanel({ orderId }) {
                                     className="rounded-lg border border-border px-3 py-2 font-semibold disabled:opacity-50">XML indir</button>
                             </>}
                         </div>
+                        {currentInvoice && <InvoiceRecoveryPanel key={`${orderId}-${recovery?.checkId || "initial"}`}
+                            invoice={currentInvoice} recovery={recovery?.invoice?.orderId === orderId ? recovery : null}
+                            history={recoveryHistory.filter(item => item.invoice?.orderId === orderId)} loading={loading}
+                            onInvestigate={() => invoiceAction("investigate")}
+                            onRetry={body => invoiceAction("retryRecovery", false, body)} />}
                         <p className="text-xs text-text-secondary">
                             Taslak oluşturma faturayı göndermez. Sevkten önce faturayı kesinleştirin.
                             Sipariş “Teslim Edildi” olduğunda PDF ekli fatura e-postası otomatik gönderilir.

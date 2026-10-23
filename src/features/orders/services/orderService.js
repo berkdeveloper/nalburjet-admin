@@ -28,6 +28,15 @@ export function finalizeOrderInvoice(id, options = {}) {
 export function refreshOrderInvoice(id, options = {}) {
     return adminApi.post(`/Faturaport/orders/${id}/invoice/refresh`, null, options);
 }
+export function investigateOrderInvoice(id, options = {}) {
+    return adminApi.post(`/Faturaport/orders/${id}/invoice/recovery/check`, null, options);
+}
+export function retryOrderInvoiceRecovery(id, body, options = {}) {
+    return adminApi.post(`/Faturaport/orders/${id}/invoice/recovery/retry`, body, options);
+}
+export function getOrderInvoiceRecoveryHistory(id, options = {}) {
+    return adminApi.get(`/Faturaport/orders/${id}/invoice/recovery`, options);
+}
 export function getOrderInvoiceFile(id, xml = false, options = {}) {
     return adminApi.get(`/Faturaport/orders/${id}/invoice/file`, {
         ...options, params: { xml }, responseType: "blob",
