@@ -10,6 +10,7 @@ import CategorySelectorModal from "@/features/categories/components/CategorySele
 
 import ProductImageManager from "@/features/products/components/ProductImageManager";
 
+import ProductVariantEditor, { emptyVariant } from "@/features/products/components/ProductVariantEditor";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 
 
@@ -81,6 +82,7 @@ export default function ProductEditModal({
     onUpdated,
 }) {
     const [currentProduct, setCurrentProduct] = useState(product);
+    const [variant, setVariant] = useState(null);
     const [form, setForm] = useState(() => createInitialForm(product));
 
     const [categories, setCategories] = useState([]);
@@ -117,6 +119,7 @@ export default function ProductEditModal({
         async function loadData() {
             try {
                 setIsLoading(true);
+                setVariant(null);
                 setIsLoadingCollections(true);
                 setError(null);
 
@@ -474,6 +477,8 @@ export default function ProductEditModal({
 
     async function handleSubmit(event) {
         event.preventDefault();
+        if (!variant) { setError(new Error("Ürün seçeneklerinin yüklenmesini bekleyin.")); return; }
+        if (variant.validationError) { setError(new Error(variant.validationError)); return; }
 
         const validationError = validateProduct();
 
@@ -520,6 +525,7 @@ export default function ProductEditModal({
             setError(null);
 
             const response = await updateProduct({
+                variant,
                 id: currentProduct.productId,
                 categoryId: form.categoryId,
                 name: form.name.trim(),
@@ -1093,6 +1099,7 @@ export default function ProductEditModal({
                                 />
                             </section>
 
+                            <ProductVariantEditor productId={product.productId} value={variant ?? emptyVariant()} onChange={setVariant} disabled={isSubmitting} />
                             <ProductImageManager
                                 product={currentProduct}
                                 onProductChange={setCurrentProduct}

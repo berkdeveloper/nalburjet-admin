@@ -817,7 +817,8 @@ export default function OrderDetailPage() {
 
                             <section className="rounded-xl border border-border bg-white">
                                 <div className="border-b border-border px-5 py-4">
-                                    <h2 className="text-base font-bold text-text-primary">
+                                    {order.discountAmount > 0 && <p className="mb-3 rounded-lg bg-green-50 p-3 text-xs text-green-800">Kupon: <strong>{order.couponCode}</strong> · {formatPrice(order.discountAmount)} indirim ürün tutarlarına uygulanmıştır.</p>}
+<h2 className="text-base font-bold text-text-primary">
                                         Sipariş Özeti
                                     </h2>
                                 </div>

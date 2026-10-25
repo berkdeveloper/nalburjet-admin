@@ -3,6 +3,7 @@
 import {
     Check,
     ChevronDown,
+    ChevronLeft,
     ChevronRight,
     ChevronsDownUp,
     ChevronsUpDown,
@@ -31,7 +32,7 @@ import { buildCategoryTree, getVisibleCategoryTree } from "@/features/categories
 import StorefrontLink from "@/components/ui/StorefrontLink";
 import { getCategoryStorefrontUrl } from "@/lib/storefront";
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 300;
 
 const STATUS_OPTIONS = [
     { value: "", label: "Tüm Durumlar" },
@@ -129,6 +130,11 @@ function getCategoryLevel(category, categoryMap) {
 
 export default function CategoryList() {
     const [categories, setCategories] = useState([]);
+    const [categoryLookup, setCategoryLookup] = useState([]);
+    const [pageIndex, setPageIndex] = useState(0);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [refreshKey, setRefreshKey] = useState(0);
     const [collapsedIds, setCollapsedIds] = useState(() => new Set());
 
     const [searchInput, setSearchInput] = useState("");
@@ -158,95 +164,96 @@ export default function CategoryList() {
     const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
     const [isDeactivating, setIsDeactivating] = useState(false);
 
-    async function loadCategories() {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            const response = await getCategories({
-                params: {
-                    "PageRequest.PageIndex": 0,
-                    "PageRequest.PageSize": PAGE_SIZE,
-                },
-            });
-
-            setCategories(response?.items ?? []);
-        } catch (error) {
-            console.error("Kategoriler yüklenemedi:", error);
-            setError(error);
-            setCategories([]);
-        } finally {
-            setIsLoading(false);
-        }
+    function loadCategories() {
+        setRefreshKey(current => current + 1);
     }
 
     useEffect(() => {
-        let isCancelled = false;
-
+        const abort = new AbortController();
         async function load() {
             try {
                 setIsLoading(true);
                 setError(null);
-
                 const response = await getCategories({
                     params: {
-                        "PageRequest.PageIndex": 0,
+                        "PageRequest.PageIndex": pageIndex,
                         "PageRequest.PageSize": PAGE_SIZE,
+                        Name: search || undefined,
+                        IsActive: status === "" ? undefined : status === "true",
                     },
+                    signal: abort.signal,
                 });
-
-                if (!isCancelled) {
-                    setCategories(response?.items ?? []);
+                if (abort.signal.aborted) return;
+                const count = response?.count ?? 0;
+                const pages = Math.max(1, response?.pages ?? Math.ceil(count / PAGE_SIZE));
+                if (pageIndex >= pages) {
+                    setPageIndex(pages - 1);
+                    return;
                 }
+                setCategories(response?.items ?? []);
+                setTotalCount(count);
+                setTotalPages(pages);
             } catch (error) {
-                if (!isCancelled) {
-                    console.error("Kategoriler yüklenemedi:", error);
+                if (!abort.signal.aborted) {
                     setError(error);
                     setCategories([]);
+                    setTotalCount(0);
+                    setTotalPages(1);
                 }
             } finally {
-                if (!isCancelled) {
-                    setIsLoading(false);
-                }
+                if (!abort.signal.aborted) setIsLoading(false);
             }
         }
-
         load();
+        return () => abort.abort();
+    }, [pageIndex, search, status, refreshKey]);
 
-        return () => {
-            isCancelled = true;
-        };
-    }, []);
+    // Parent selection and storefront URLs need ancestors from other pages too.
+    // This lookup does not control which records are displayed in the paginated table.
+    useEffect(() => {
+        const abort = new AbortController();
+        async function loadLookup() {
+            try {
+                const items = [];
+                let page = 0;
+                let pages = 1;
+                do {
+                    const response = await getCategories({ params: {
+                        "PageRequest.PageIndex": page,
+                        "PageRequest.PageSize": PAGE_SIZE,
+                    }, signal: abort.signal });
+                    if (abort.signal.aborted) return;
+                    items.push(...(response?.items ?? []));
+                    pages = response?.pages ?? Math.ceil((response?.count ?? items.length) / PAGE_SIZE);
+                    page += 1;
+                } while (page < pages);
+                setCategoryLookup(items);
+            } catch (error) {
+                if (!abort.signal.aborted) console.error("Üst kategori bilgileri yüklenemedi:", error);
+            }
+        }
+        loadLookup();
+        return () => abort.abort();
+    }, [refreshKey]);
 
-    const filteredCategories = useMemo(() => {
-        const normalizedSearch = search.trim().toLocaleLowerCase("tr-TR");
+    const filteredCategories = categories;
 
-        return categories.filter((category) => {
-            const matchesSearch =
-                !normalizedSearch ||
-                category?.name?.toLocaleLowerCase("tr-TR").includes(normalizedSearch);
-
-            const matchesStatus =
-                status === "" || String(category?.isActive) === status;
-
-            return matchesSearch && matchesStatus;
-        });
-    }, [categories, search, status]);
+    // Keep ancestors available even when they are outside the displayed page.
+    const categoryMap = useMemo(
+        () => new Map([...categoryLookup, ...categories].map((category) => [category.categoryId, category])),
+        [categoryLookup, categories]
+    );
 
     const categoryTree = useMemo(
-        () => buildCategoryTree(filteredCategories),
-        [filteredCategories]
+        () => buildCategoryTree(filteredCategories).map(item => ({
+            ...item, level: getCategoryLevel(item.category, categoryMap),
+        })),
+        [filteredCategories, categoryMap]
     );
 
     const visibleCategoryTree = useMemo(
         () => getVisibleCategoryTree(categoryTree, collapsedIds),
         [categoryTree, collapsedIds]
-    );
-
-    // Use the full list so filtering or collapsing cannot shorten the public URL.
-    const categoryMap = useMemo(
-        () => new Map(categories.map((category) => [category.categoryId, category])),
-        [categories]
     );
 
     function toggleCategory(categoryId) {
@@ -258,36 +265,26 @@ export default function CategoryList() {
         });
     }
 
-    const parentCategoryOptions = useMemo(() => {
-        const categoryMap = new Map(
-            categories.map((category) => [category.categoryId, category])
-        );
-
-        return [...categories]
-            .sort((a, b) =>
-                a.name.localeCompare(b.name, "tr", {
-                    sensitivity: "base",
-                })
-            )
-            .map((category) => ({
-                ...category,
-                level: getCategoryLevel(category, categoryMap),
-            }));
-    }, [categories]);
+    const parentCategoryOptions = useMemo(() => [...categoryMap.values()]
+        .sort((a, b) => a.name.localeCompare(b.name, "tr", { sensitivity: "base" }))
+        .map(category => ({ ...category, level: getCategoryLevel(category, categoryMap) })), [categoryMap]);
 
     function handleSearchSubmit(event) {
         event.preventDefault();
         setSearch(searchInput.trim());
+        setPageIndex(0);
         setCollapsedIds(new Set());
     }
 
     function handleStatusChange(event) {
         setStatus(event.target.value);
+        setPageIndex(0);
         setCollapsedIds(new Set());
     }
 
     function handleClearFilters() {
         setSearchInput("");
+        setPageIndex(0);
         setSearch("");
         setStatus("");
         setCollapsedIds(new Set());
@@ -604,7 +601,7 @@ export default function CategoryList() {
                         <p className="mt-0.5 text-xs text-text-secondary">
                             {isLoading
                                 ? "Kategoriler yükleniyor..."
-                                : `${filteredCategories.length.toLocaleString(
+                                : `${totalCount.toLocaleString(
                                     "tr-TR"
                                 )} kategori`}
                         </p>
@@ -905,6 +902,23 @@ export default function CategoryList() {
                         </div>
                     </>
                 )}
+                <nav aria-label="Kategori sayfaları" className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <p className="text-xs text-text-secondary">
+                        Sayfa {pageIndex + 1} / {totalPages} · Sayfa başına {PAGE_SIZE} kategori
+                        {totalCount > 0 && ` · ${pageIndex * PAGE_SIZE + 1}–${Math.min((pageIndex + 1) * PAGE_SIZE, totalCount)} / ${totalCount}`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => { setPageIndex(p => Math.max(0, p - 1)); setCollapsedIds(new Set()); }} disabled={isLoading || !!error || pageIndex === 0}
+                            className="flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-text-primary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40">
+                            <ChevronLeft className="h-4 w-4" /> Önceki
+                        </button>
+                        <span aria-current="page" className="flex h-9 min-w-9 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white">{pageIndex + 1}</span>
+                        <button type="button" onClick={() => { setPageIndex(p => Math.min(totalPages - 1, p + 1)); setCollapsedIds(new Set()); }} disabled={isLoading || !!error || pageIndex + 1 >= totalPages}
+                            className="flex h-9 items-center gap-1 rounded-lg border border-border px-3 text-xs font-medium text-text-primary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40">
+                            Sonraki <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </div>
+                </nav>
             </div>
 
             {isDeactivateModalOpen && selectedCategory && (

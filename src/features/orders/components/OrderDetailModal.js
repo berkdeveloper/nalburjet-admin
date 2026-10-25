@@ -683,7 +683,8 @@ export default function OrderDetailModal({
                                 </section>
 
                                 <section>
-                                    <h3 className="mb-3 text-sm font-bold text-text-primary">
+                                    {order.discountAmount > 0 && <p className="mb-3 rounded-lg bg-green-50 p-3 text-xs text-green-800">Kupon: <strong>{order.couponCode}</strong> · {formatPrice(order.discountAmount)} indirim ürün tutarlarına uygulanmıştır.</p>}
+<h3 className="mb-3 text-sm font-bold text-text-primary">
                                         Sipariş Özeti
                                     </h3>
 

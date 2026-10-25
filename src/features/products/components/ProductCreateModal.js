@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getCategories } from "@/features/categories/services/categoryService";
 import { createProduct } from "@/features/products/services/productService";
 import CategorySelectorModal from "@/features/categories/components/CategorySelectorModal";
+import ProductVariantEditor, { emptyVariant } from "@/features/products/components/ProductVariantEditor";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import ProductImageManager from "@/features/products/components/ProductImageManager";
 
@@ -38,6 +39,7 @@ export default function ProductCreateModal({
     onClose,
     onCreated,
 }) {
+    const [variant, setVariant] = useState(emptyVariant);
     const [form, setForm] = useState(() => ({ ...INITIAL_FORM }));
     const [categories, setCategories] = useState([]);
     const [images, setImages] = useState([]);
@@ -103,6 +105,7 @@ export default function ProductCreateModal({
     function resetForm() {
         setForm({ ...INITIAL_FORM });
         setImages([]);
+        setVariant(emptyVariant());
         setError(null);
         setIsCategoryModalOpen(false);
         setIsBrandDropdownOpen(false);
@@ -174,6 +177,7 @@ export default function ProductCreateModal({
 
     async function handleSubmit(event) {
         event.preventDefault();
+        if (variant?.validationError) { setError(new Error(variant.validationError)); return; }
 
         const validationError = validate();
 
@@ -187,6 +191,7 @@ export default function ProductCreateModal({
             setError(null);
 
             const formData = new FormData();
+            formData.append("VariantJson", JSON.stringify(variant));
 
             appendFormValue(formData, "CategoryId", form.categoryId);
             appendFormValue(formData, "Name", form.name.trim());
@@ -601,7 +606,8 @@ export default function ProductCreateModal({
                             />
                         </section>
 
-                        <ProductImageManager
+                        <ProductVariantEditor value={variant ?? emptyVariant()} onChange={setVariant} disabled={isSubmitting} />
+                            <ProductImageManager
                             mode="create"
                             selectedImages={images}
                             onSelectedImagesChange={setImages}

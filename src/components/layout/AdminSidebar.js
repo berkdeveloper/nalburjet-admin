@@ -28,6 +28,7 @@ const navigationItems = [
     { label: "Ödeme İncelemeleri", href: "/odeme-incelemeleri", icon: ShieldCheck },
     { label: "Bildirimler", href: "/bildirimler", icon: Bell },
     { label: "Ürünler", href: "/urunler", icon: Package },
+    { label: "İndirim Kuponları", href: "/kuponlar", icon: Tags },
     { label: "Kategoriler", href: "/kategoriler", icon: Tags },
     { label: "Bloglar", href: "/bloglar", icon: BookOpen },
     { label: "Vitrin Ürünleri", href: "/vitrin-urunleri", icon: Boxes },
