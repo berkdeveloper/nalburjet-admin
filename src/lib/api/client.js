@@ -2,8 +2,10 @@ import { ADMIN_API_BASE_URL, API_BASE_URL } from "./config";
 import { ApiError } from "./errors";
 import {
   getAccessToken,
+  ensureAccessToken,
   refreshAccessToken,
 } from "@/features/auth/utils/authSession";
+import { isTokenExpired } from "@/features/auth/utils/token";
 
 function buildUrl(baseUrl, endpoint, params) {
   const url = new URL(`${baseUrl}${endpoint}`);
@@ -20,15 +22,12 @@ function buildUrl(baseUrl, endpoint, params) {
 }
 
 function buildHeaders(headers = {}, accessToken = null, isFormData = false) {
-  return {
-    ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(accessToken
-      ? {
-        Authorization: `Bearer ${accessToken}`,
-      }
-      : {}),
-    ...headers,
-  };
+  const result = new Headers(headers);
+  if (!isFormData && !result.has("Content-Type")) {
+    result.set("Content-Type", "application/json");
+  }
+  if (accessToken) result.set("Authorization", `Bearer ${accessToken}`);
+  return result;
 }
 
 async function parseResponse(response) {
@@ -53,15 +52,20 @@ async function executeRequest(
   accessToken = null,
   isFormData = false,
 ) {
-  return fetch(url, {
-    ...requestOptions,
-    credentials: "include",
-    headers: buildHeaders(
-      requestOptions.headers,
-      accessToken,
-      isFormData,
-    ),
-  });
+  try {
+    return await fetch(url, {
+      ...requestOptions,
+      credentials: "include",
+      headers: buildHeaders(
+        requestOptions.headers,
+        accessToken,
+        isFormData,
+      ),
+    });
+  } catch (error) {
+    if (error.name === "AbortError" || error.name === "TimeoutError") throw error;
+    throw new ApiError("Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.", 0);
+  }
 }
 
 async function apiRequest(baseUrl, endpoint, options = {}) {
@@ -75,7 +79,10 @@ async function apiRequest(baseUrl, endpoint, options = {}) {
   } = options;
 
   const url = buildUrl(baseUrl, endpoint, params);
-  const currentAccessToken = skipAuth ? null : getAccessToken();
+  const currentAccessToken = skipAuth ? null : await ensureAccessToken();
+  if (!skipAuth && !currentAccessToken) {
+    throw new ApiError("Yönetici oturumunuz sona erdi. Lütfen tekrar giriş yapın.", 401);
+  }
 
   let response = await executeRequest(
     url,
@@ -84,20 +91,19 @@ async function apiRequest(baseUrl, endpoint, options = {}) {
     isFormData,
   );
 
-  if (response.status === 401 && !skipRefresh) {
-    try {
-      const newAccessToken = await refreshAccessToken();
+  if (response.status === 401 && !skipAuth && !skipRefresh) {
+    const latestToken = getAccessToken();
+    const newAccessToken = latestToken && latestToken !== currentAccessToken && !isTokenExpired(latestToken)
+      ? latestToken
+      : await refreshAccessToken();
 
-      if (newAccessToken) {
-        response = await executeRequest(
-          url,
-          requestOptions,
-          newAccessToken,
-          isFormData,
-        );
-      }
-    } catch {
-      // Refresh başarısız olduğunda orijinal 401 response'u işlenir.
+    if (newAccessToken) {
+      response = await executeRequest(
+        url,
+        requestOptions,
+        newAccessToken,
+        isFormData,
+      );
     }
   }
 

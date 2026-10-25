@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import { withAdminSessionLock } from "../utils/authSession";
 
 export function login(email, password, options = {}) {
   return api.post(
@@ -12,14 +13,14 @@ export function login(email, password, options = {}) {
 }
 
 export function adminLogin(email, password, options = {}) {
-  return api.post(
+  return withAdminSessionLock(() => api.post(
     "/AdminAuthentications/login",
     {
       email,
       password,
     },
-    options,
-  );
+    { ...options, skipAuth: true, skipRefresh: true },
+  ));
 }
 
 export function refreshToken(options = {}) {
@@ -31,11 +32,12 @@ export function refreshToken(options = {}) {
 }
 
 export function adminRefreshToken(options = {}) {
-  return api.post("/AdminAuthentications/refresh-token", undefined, {
+  return withAdminSessionLock(() => api.post("/AdminAuthentications/refresh-token", undefined, {
     ...options,
     skipAuth: true,
     skipRefresh: true,
-  });
+    signal: options.signal ?? AbortSignal.timeout(15_000),
+  }));
 }
 
 export function validateToken(accessToken, options = {}) {
@@ -59,11 +61,13 @@ export function logout(accessToken, options = {}) {
 }
 
 export function adminLogout(accessToken, options = {}) {
-  return api.post("/AdminAuthentications/logout", undefined, {
+  return withAdminSessionLock(() => api.post("/AdminAuthentications/logout", undefined, {
     ...options,
+    skipAuth: true,
+    skipRefresh: true,
     headers: {
       ...options.headers,
       Authorization: `Bearer ${accessToken}`,
     },
-  });
+  }));
 }

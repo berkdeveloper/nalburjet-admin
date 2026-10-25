@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -17,6 +18,10 @@ import {
 import {
   clearAccessToken,
   clearRefreshHandler,
+  ensureAccessToken,
+  getAccessToken,
+  getSessionGeneration,
+  isAuthenticationFailure,
   refreshAccessToken,
   setAccessToken,
   setRefreshHandler,
@@ -34,6 +39,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const restorePendingRef = useRef(false);
 
   const setAuthentication = useCallback((tokenData) => {
     const nextAccessToken = tokenData?.accessToken ?? null;
@@ -55,14 +61,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const clearAuthentication = useCallback(() => {
+    restorePendingRef.current = false;
     setContextAccessToken(null);
     setUser(null);
     clearAccessToken();
   }, []);
 
   const refresh = useCallback(async () => {
+    const generation = getSessionGeneration();
     try {
       const response = await adminRefreshTokenRequest();
+      if (generation !== getSessionGeneration()) return null;
       const tokenData = response?.data ?? null;
 
       if (!setAuthentication(tokenData)) {
@@ -70,9 +79,12 @@ export function AuthProvider({ children }) {
         return null;
       }
 
+      restorePendingRef.current = false;
       return tokenData;
     } catch (error) {
-      clearAuthentication();
+      if (generation === getSessionGeneration() && isAuthenticationFailure(error)) {
+        clearAuthentication();
+      }
       throw error;
     }
   }, [clearAuthentication, setAuthentication]);
@@ -90,6 +102,7 @@ export function AuthProvider({ children }) {
       try {
         setError(null);
         setIsLoading(true);
+        clearAuthentication();
 
         const response = await adminLoginRequest(email, password);
         const tokenData = response?.data ?? null;
@@ -124,7 +137,9 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const response = await validateTokenRequest(accessToken);
+      const currentAccessToken = await ensureAccessToken();
+      if (!currentAccessToken) return false;
+      const response = await validateTokenRequest(currentAccessToken);
 
       return response?.data?.isValid === true;
     } catch {
@@ -142,7 +157,8 @@ export function AuthProvider({ children }) {
       setIsLoading(true);
       setError(null);
 
-      await adminLogoutRequest(accessToken);
+      const currentAccessToken = await ensureAccessToken();
+      if (currentAccessToken) await adminLogoutRequest(currentAccessToken);
     } catch (error) {
       setError(error);
       throw error;
@@ -172,12 +188,17 @@ export function AuthProvider({ children }) {
         } else {
           clearAuthentication();
         }
-      } catch {
+      } catch (error) {
         if (isCancelled) {
           return;
         }
 
-        clearAuthentication();
+        if (isAuthenticationFailure(error)) {
+          clearAuthentication();
+        } else {
+          restorePendingRef.current = true;
+          setError(error);
+        }
       } finally {
         if (!isCancelled) {
           setIsLoading(false);
@@ -191,6 +212,30 @@ export function AuthProvider({ children }) {
       isCancelled = true;
     };
   }, [clearAuthentication]);
+
+  useEffect(() => {
+    async function keepSessionAlive() {
+      if (document.visibilityState === "hidden") return;
+      if (!getAccessToken() && !restorePendingRef.current) return;
+
+      try {
+        await ensureAccessToken();
+      } catch {
+        // Keep the current session on temporary failures; retry on focus/online or the next interval.
+      }
+    }
+
+    const interval = window.setInterval(keepSessionAlive, 60_000);
+    window.addEventListener("focus", keepSessionAlive);
+    window.addEventListener("online", keepSessionAlive);
+    document.addEventListener("visibilitychange", keepSessionAlive);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", keepSessionAlive);
+      window.removeEventListener("online", keepSessionAlive);
+      document.removeEventListener("visibilitychange", keepSessionAlive);
+    };
+  }, []);
 
   const value = useMemo(
     () => ({

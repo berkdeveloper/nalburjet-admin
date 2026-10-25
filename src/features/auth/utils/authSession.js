@@ -1,6 +1,25 @@
+import { isTokenExpired } from "./token";
+
 let accessToken = null;
 let refreshHandler = null;
 let refreshPromise = null;
+let sessionGeneration = 0;
+
+export function getSessionGeneration() {
+  return sessionGeneration;
+}
+
+export function isAuthenticationFailure(error) {
+  return error?.status === 401 || error?.status === 403;
+}
+
+export function withAdminSessionLock(action) {
+  if (typeof navigator !== "undefined" && navigator.locks?.request) {
+    return navigator.locks.request("nalburjet-admin-session", action);
+  }
+
+  return action();
+}
 
 export function getAccessToken() {
   return accessToken;
@@ -12,6 +31,7 @@ export function setAccessToken(token) {
 
 export function clearAccessToken() {
   accessToken = null;
+  sessionGeneration++;
 }
 
 export function setRefreshHandler(handler) {
@@ -31,18 +51,37 @@ export async function refreshAccessToken() {
     return refreshPromise;
   }
 
-  refreshPromise = (async () => {
-    try {
-      const tokenData = await refreshHandler();
-      const nextAccessToken = tokenData?.accessToken ?? null;
+  const generation = sessionGeneration;
+  const handler = refreshHandler;
+  const operation = Promise.resolve().then(async () => {
+    const tokenData = await handler();
+    if (generation !== sessionGeneration) return null;
 
-      setAccessToken(nextAccessToken);
+    const nextAccessToken = tokenData?.accessToken ?? null;
+    setAccessToken(nextAccessToken);
+    return nextAccessToken;
+  });
 
-      return nextAccessToken;
-    } finally {
+  refreshPromise = operation;
+  try {
+    return await operation;
+  } finally {
+    if (refreshPromise === operation) {
       refreshPromise = null;
     }
-  })();
+  }
+}
 
-  return refreshPromise;
+export async function ensureAccessToken() {
+  if (accessToken && !isTokenExpired(accessToken, 60_000)) return accessToken;
+
+  try {
+    return await refreshAccessToken();
+  } catch (error) {
+    // A temporary refresh failure must not discard an access token that is still valid.
+    if (!isAuthenticationFailure(error) && accessToken && !isTokenExpired(accessToken)) {
+      return accessToken;
+    }
+    throw error;
+  }
 }

@@ -42,12 +42,12 @@ function decodeBase64Url(value) {
     };
   }
   
-  export function isTokenExpired(accessToken) {
+  export function isTokenExpired(accessToken, leewayMilliseconds = 0) {
     const payload = decodeAccessToken(accessToken);
   
-    if (!payload?.exp) {
+    if (!Number.isFinite(payload?.exp)) {
       return true;
     }
   
-    return payload.exp * 1000 <= Date.now();
+    return payload.exp * 1000 <= Date.now() + leewayMilliseconds;
   }
