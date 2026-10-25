@@ -66,7 +66,7 @@ export default function ProductCreateModal({
                 const response = await getCategories({
                     params: {
                         "PageRequest.PageIndex": 0,
-                        "PageRequest.PageSize": 100,
+                        "PageRequest.PageSize": 500,
                     },
                 });
 

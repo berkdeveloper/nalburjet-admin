@@ -133,21 +133,21 @@ export default function ProductEditModal({
                     getCategories({
                         params: {
                             "PageRequest.PageIndex": 0,
-                            "PageRequest.PageSize": 100,
+                            "PageRequest.PageSize": 500,
                         },
                     }),
                     getProductCollections({
                         params: {
                             CollectionType: COLLECTION_TYPES.BEST_SELLER,
                             "PageRequest.PageIndex": 0,
-                            "PageRequest.PageSize": 100,
+                            "PageRequest.PageSize": 1000,
                         },
                     }),
                     getProductCollections({
                         params: {
                             CollectionType: COLLECTION_TYPES.POPULAR,
                             "PageRequest.PageIndex": 0,
-                            "PageRequest.PageSize": 100,
+                            "PageRequest.PageSize": 1000,
                         },
                     }),
                 ]);
